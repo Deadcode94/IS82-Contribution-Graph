@@ -35,14 +35,14 @@ for idx, row in df.iterrows():
     all_authors.extend(combined_authors)
     
     # Track complex map data (Name, Year, Role) for the frontend UI
-    for author in primary_authors:
+    for i, author in enumerate(primary_authors):
         if author not in author_maps_data:
             author_maps_data[author] = []
             author_years[author] = []
         
         # Prevent duplicates if data is messy
         if not any(m['name'] == map_name for m in author_maps_data[author]):
-            author_maps_data[author].append({'name': map_name, 'year': map_year, 'role': 'Primary'})
+            author_maps_data[author].append({'name': map_name, 'year': map_year, 'role': 'Primary', 'is_first_author': i == 0})
         author_years[author].append(map_year)
         
     for author in collaborator_authors:
@@ -118,8 +118,8 @@ for author, count in author_counts.items():
     node_size = 50 + (count * 5)
     
     # Goodday Era Logic Override
-    if author == "Goodday":
-        primary_years = [m['year'] for m in author_maps_data.get(author, []) if m['role'] == 'Primary']
+    if author == "GoodDayToDie!!":
+        primary_years = [m['year'] for m in author_maps_data.get(author, []) if m['role'] == 'Primary' and m.get('is_first_author', False)]
         min_year = min(primary_years) if primary_years else min(author_years[author])
     else:
         min_year = min(author_years[author])
@@ -422,7 +422,7 @@ custom_injection = f"""
             nameEl.innerText = selectedNode + "'s Contributions (" + authorMapsData[selectedNode].length + ")";
             
             // Toggle subtitle logic specifically for Goodday
-            if (selectedNode === 'Goodday') {{
+            if (selectedNode === 'GoodDayToDie!!') {{
                 subtitleEl.innerHTML = "*Era based on original maps only, excluding historical revamps.";
                 subtitleEl.style.display = "block";
             }} else {{
