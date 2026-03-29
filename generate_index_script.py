@@ -117,7 +117,13 @@ net.set_options(options)
 for author, count in author_counts.items():
     node_size = 50 + (count * 5)
     
-    min_year = min(author_years[author])
+    # Goodday Era Logic Override
+    if author == "Goodday":
+        primary_years = [m['year'] for m in author_maps_data.get(author, []) if m['role'] == 'Primary']
+        min_year = min(primary_years) if primary_years else min(author_years[author])
+    else:
+        min_year = min(author_years[author])
+        
     max_year = max(author_years[author])
     activity_period = f"{min_year}-{max_year}" if min_year != max_year else f"{min_year}"
     
@@ -162,8 +168,37 @@ net.write_html(html_filename)
 # 6. Inject Custom CSS, HTML UI, and JavaScript
 custom_injection = f"""
 <style type="text/css">
-    body, html {{ margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; }}
-    #mynetwork {{ border: none !important; outline: none !important; height: 100vh !important; }}
+    body, html {{ 
+        margin: 0 !important; 
+        padding: 0 !important; 
+        width: 100% !important;
+        height: 100% !important;
+        background-color: #222222 !important; 
+        overflow: hidden !important; 
+        font-family: Arial, sans-serif; 
+    }}
+    
+    center, .card, .container, .container-fluid {{
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: none !important;
+        background-color: #222222 !important;
+        max-width: 100% !important;
+    }}
+    
+    #mynetwork {{ 
+        width: 100vw !important;
+        height: 100vh !important; 
+        border: none !important; 
+        border-radius: 0 !important; 
+        outline: none !important; 
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #222222 !important; 
+    }}
     
     #custom-ui-panel {{
         position: absolute;
@@ -180,16 +215,16 @@ custom_injection = f"""
         max-height: 90vh;
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
     }}
     #custom-ui-panel h3 {{ margin-top: 0; font-size: 16px; border-bottom: 1px solid #555; padding-bottom: 10px; }}
     #custom-ui-panel h4 {{ font-size: 14px; margin: 15px 0 5px 0; }}
-    #author-search {{ width: 100%; padding: 8px; margin-bottom: 15px; background: #333; color: white; border: 1px solid #555; border-radius: 4px; }}
-    #freeze-btn {{ width: 100%; padding: 10px; cursor: pointer; background: #5a9bd4; color: white; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; }}
+    #author-search {{ width: 100%; padding: 8px; margin-bottom: 15px; background: #333; color: white; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; }}
+    #freeze-btn {{ width: 100%; padding: 10px; cursor: pointer; background: #5a9bd4; color: white; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; box-sizing: border-box; }}
     #freeze-btn:hover {{ background: #4a8bc4; }}
     .legend-list {{ list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.8; }}
     .legend-color {{ display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }}
     
-    /* Dynamic details section */
     #author-details {{
         display: none;
         margin-top: 15px;
@@ -199,8 +234,12 @@ custom_injection = f"""
         overflow: hidden;
         flex-direction: column;
     }}
-    #detail-name {{ margin-top: 0; color: #5a9bd4; font-size: 15px; margin-bottom: 10px; }}
-    #sort-maps {{ width: 100%; padding: 5px; margin-bottom: 10px; background: #222; color: #ddd; border: 1px solid #555; border-radius: 4px; font-size: 12px; }}
+    
+    /* Title and Subtitle Styling */
+    #detail-name {{ margin-top: 0; margin-bottom: 5px; color: #5a9bd4; font-size: 15px; }}
+    #detail-subtitle {{ display: none; font-size: 11px; font-style: italic; color: #aaa; margin-bottom: 10px; line-height: 1.3; }}
+    
+    #sort-maps {{ width: 100%; padding: 5px; margin-bottom: 10px; background: #222; color: #ddd; border: 1px solid #555; border-radius: 4px; font-size: 12px; box-sizing: border-box; }}
     
     #detail-maps-container {{
         overflow-y: auto;
@@ -215,7 +254,6 @@ custom_injection = f"""
     
     .map-item {{ font-size: 13px; margin-bottom: 6px; color: #ddd; display: flex; align-items: flex-start; }}
     
-    /* New styling for AUTHOR and COLLAB tags */
     .author-tag {{ color: #e74c3c; font-size: 10px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }}
     .collab-tag {{ color: #888888; font-size: 10px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }}
 </style>
@@ -244,6 +282,7 @@ custom_injection = f"""
     
     <div id="author-details" style="display: none;">
         <h4 id="detail-name"></h4>
+        <div id="detail-subtitle"></div>
         
         <select id="sort-maps">
             <option value="year">Sort by Release Year (Oldest First)</option>
@@ -259,36 +298,31 @@ custom_injection = f"""
 <script type="text/javascript">
     var defaultEdgeColor = "{base_edge_color}";
     var originalColors = {{}};
-    // Complex JSON containing name, year, and role for each map
     var authorMapsData = {author_maps_json};
     var currentSelectedNode = null;
 
-    // Function to render the map list based on the selected sort criteria
     function renderMapList() {{
         if (!currentSelectedNode) return;
         
-        var maps = authorMapsData[currentSelectedNode].slice(); // clone array
+        var maps = authorMapsData[currentSelectedNode].slice(); 
         var sortType = document.getElementById('sort-maps').value;
         
-        // Sorting logic
         maps.sort(function(a, b) {{
             if (sortType === 'year') {{
-                if (a.year !== b.year) return a.year - b.year; // Sort by year
-                return a.name.localeCompare(b.name);           // Fallback to name if same year
+                if (a.year !== b.year) return a.year - b.year; 
+                return a.name.localeCompare(b.name);           
             }} else {{
-                return a.name.localeCompare(b.name);           // Sort purely by name
+                return a.name.localeCompare(b.name);           
             }}
         }});
         
         var mapsListEl = document.getElementById('detail-maps');
         mapsListEl.innerHTML = ""; 
         
-        // Render each item
         maps.forEach(function(m) {{
             var li = document.createElement('li');
             li.className = 'map-item';
             
-            // Add visual tags based on their specific role in this map
             var prefix = "";
             if (m.role === 'Primary') {{
                 prefix = "<span class='author-tag'>[AUTHOR]</span>";
@@ -302,7 +336,6 @@ custom_injection = f"""
         }});
     }}
 
-    // Re-render the list immediately if the user changes the sort dropdown
     document.getElementById('sort-maps').addEventListener('change', renderMapList);
 
     setTimeout(function() {{
@@ -355,13 +388,12 @@ custom_injection = f"""
     network.on("selectNode", function(params) {{
         if (params.nodes.length === 1) {{
             var selectedNode = params.nodes[0];
-            currentSelectedNode = selectedNode; // Track global state for sorting updates
+            currentSelectedNode = selectedNode; 
             
             var connectedNodes = network.getConnectedNodes(selectedNode);
             var allNodes = nodes.get();
             var allEdges = edges.get();
             
-            // Highlight/Fade nodes
             for (var i = 0; i < allNodes.length; i++) {{
                 if (allNodes[i].id !== selectedNode && !connectedNodes.includes(allNodes[i].id)) {{
                     allNodes[i].color = "rgba(100, 100, 100, 0.08)";
@@ -372,7 +404,6 @@ custom_injection = f"""
                 }}
             }}
             
-            // Highlight/Fade edges
             for (var j = 0; j < allEdges.length; j++) {{
                 if (allEdges[j].from === selectedNode || allEdges[j].to === selectedNode) {{
                     allEdges[j].color = {{ color: "rgba(255, 255, 255, 0.5)", highlight: "rgba(255, 255, 255, 0.6)" }};
@@ -384,13 +415,20 @@ custom_injection = f"""
             nodes.update(allNodes);
             edges.update(allEdges);
 
-            // Update UI Panel Display
             var detailsContainer = document.getElementById('author-details');
             var nameEl = document.getElementById('detail-name');
+            var subtitleEl = document.getElementById('detail-subtitle');
             
             nameEl.innerText = selectedNode + "'s Contributions (" + authorMapsData[selectedNode].length + ")";
             
-            // Call the shared render function
+            // Toggle subtitle logic specifically for Goodday
+            if (selectedNode === 'Goodday') {{
+                subtitleEl.innerHTML = "*Era based on original maps only, excluding historical revamps.";
+                subtitleEl.style.display = "block";
+            }} else {{
+                subtitleEl.style.display = "none";
+            }}
+            
             renderMapList();
             
             detailsContainer.style.display = "flex";
@@ -398,7 +436,7 @@ custom_injection = f"""
     }});
 
     network.on("deselectNode", function(params) {{
-        currentSelectedNode = null; // Clear tracking
+        currentSelectedNode = null; 
         
         var allNodes = nodes.get();
         var allEdges = edges.get();
@@ -415,7 +453,6 @@ custom_injection = f"""
         nodes.update(allNodes);
         edges.update(allEdges);
 
-        // Hide UI Panel details
         document.getElementById('author-details').style.display = "none";
     }});
 </script>
@@ -424,4 +461,4 @@ custom_injection = f"""
 with open(html_filename, 'a', encoding='utf-8') as f:
     f.write(custom_injection)
 
-print("Interactive graph generated successfully. Visual distinction between PRIMARY and COLLABORATOR added.")
+print("Interactive graph generated successfully. UI explanatory subtitle for Goodday added.")

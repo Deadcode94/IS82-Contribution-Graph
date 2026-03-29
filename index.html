@@ -126,8 +126,37 @@
     </body>
 </html>
 <style type="text/css">
-    body, html { margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; }
-    #mynetwork { border: none !important; outline: none !important; height: 100vh !important; }
+    body, html { 
+        margin: 0 !important; 
+        padding: 0 !important; 
+        width: 100% !important;
+        height: 100% !important;
+        background-color: #222222 !important; 
+        overflow: hidden !important; 
+        font-family: Arial, sans-serif; 
+    }
+    
+    center, .card, .container, .container-fluid {
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: none !important;
+        background-color: #222222 !important;
+        max-width: 100% !important;
+    }
+    
+    #mynetwork { 
+        width: 100vw !important;
+        height: 100vh !important; 
+        border: none !important; 
+        border-radius: 0 !important; 
+        outline: none !important; 
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #222222 !important; 
+    }
     
     #custom-ui-panel {
         position: absolute;
@@ -144,16 +173,16 @@
         max-height: 90vh;
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
     }
     #custom-ui-panel h3 { margin-top: 0; font-size: 16px; border-bottom: 1px solid #555; padding-bottom: 10px; }
     #custom-ui-panel h4 { font-size: 14px; margin: 15px 0 5px 0; }
-    #author-search { width: 100%; padding: 8px; margin-bottom: 15px; background: #333; color: white; border: 1px solid #555; border-radius: 4px; }
-    #freeze-btn { width: 100%; padding: 10px; cursor: pointer; background: #5a9bd4; color: white; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; }
+    #author-search { width: 100%; padding: 8px; margin-bottom: 15px; background: #333; color: white; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; }
+    #freeze-btn { width: 100%; padding: 10px; cursor: pointer; background: #5a9bd4; color: white; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; box-sizing: border-box; }
     #freeze-btn:hover { background: #4a8bc4; }
     .legend-list { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.8; }
     .legend-color { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
     
-    /* Dynamic details section */
     #author-details {
         display: none;
         margin-top: 15px;
@@ -163,8 +192,12 @@
         overflow: hidden;
         flex-direction: column;
     }
-    #detail-name { margin-top: 0; color: #5a9bd4; font-size: 15px; margin-bottom: 10px; }
-    #sort-maps { width: 100%; padding: 5px; margin-bottom: 10px; background: #222; color: #ddd; border: 1px solid #555; border-radius: 4px; font-size: 12px; }
+    
+    /* Title and Subtitle Styling */
+    #detail-name { margin-top: 0; margin-bottom: 5px; color: #5a9bd4; font-size: 15px; }
+    #detail-subtitle { display: none; font-size: 11px; font-style: italic; color: #aaa; margin-bottom: 10px; line-height: 1.3; }
+    
+    #sort-maps { width: 100%; padding: 5px; margin-bottom: 10px; background: #222; color: #ddd; border: 1px solid #555; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
     
     #detail-maps-container {
         overflow-y: auto;
@@ -179,7 +212,6 @@
     
     .map-item { font-size: 13px; margin-bottom: 6px; color: #ddd; display: flex; align-items: flex-start; }
     
-    /* New styling for AUTHOR and COLLAB tags */
     .author-tag { color: #e74c3c; font-size: 10px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }
     .collab-tag { color: #888888; font-size: 10px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }
 </style>
@@ -208,6 +240,7 @@
     
     <div id="author-details" style="display: none;">
         <h4 id="detail-name"></h4>
+        <div id="detail-subtitle"></div>
         
         <select id="sort-maps">
             <option value="year">Sort by Release Year (Oldest First)</option>
@@ -223,36 +256,31 @@
 <script type="text/javascript">
     var defaultEdgeColor = "rgba(170, 170, 170, 0.3)";
     var originalColors = {};
-    // Complex JSON containing name, year, and role for each map
     var authorMapsData = {"FlaMiN": [{"name": "Alpine Rally", "year": 2005, "role": "Primary"}, {"name": "Kartman", "year": 2007, "role": "Primary"}, {"name": "Maze Of Horrors", "year": 2010, "role": "Primary"}, {"name": "After The Tsunami", "year": 2013, "role": "Collaborator"}, {"name": "Deathrace II", "year": 2006, "role": "Collaborator"}, {"name": "Deathrace Rcc", "year": 2009, "role": "Primary"}, {"name": "Deathrace Time Trial", "year": 2011, "role": "Primary"}, {"name": "Deathrace Winter Wonderland", "year": 2006, "role": "Primary"}, {"name": "Hillclimb 1", "year": 2004, "role": "Primary"}, {"name": "Luge World", "year": 2020, "role": "Collaborator"}, {"name": "Tropical Run", "year": 2005, "role": "Collaborator"}, {"name": "Beanstalk II", "year": 2005, "role": "Primary"}, {"name": "Blue Water", "year": 2012, "role": "Collaborator"}, {"name": "Sixteen Squares", "year": 2013, "role": "Primary"}, {"name": "Beanstalk", "year": 2004, "role": "Primary"}, {"name": "Deathrace Extreme", "year": 2010, "role": "Primary"}, {"name": "Endurance", "year": 2010, "role": "Primary"}, {"name": "Rainbow Road", "year": 2009, "role": "Primary"}, {"name": "Enfo Stress Test", "year": 2007, "role": "Primary"}, {"name": "Hillclimb 2", "year": 2004, "role": "Primary"}, {"name": "Hop", "year": 2006, "role": "Primary"}, {"name": "Perfection Mk2", "year": 2007, "role": "Primary"}, {"name": "Room Of Gloom", "year": 2006, "role": "Primary"}, {"name": "Room Of Gloom 2", "year": 2010, "role": "Primary"}, {"name": "Cessna Challenge Redux", "year": 2015, "role": "Primary"}, {"name": "Endurance II", "year": 2020, "role": "Primary"}, {"name": "Deathrace CTF", "year": 2010, "role": "Primary"}, {"name": "Frogger", "year": 2008, "role": "Primary"}, {"name": "Frogger Teh Flag", "year": 2013, "role": "Primary"}, {"name": "Interstate Hq Fight Night", "year": 2007, "role": "Primary"}, {"name": "Jumpzone", "year": 2010, "role": "Primary"}, {"name": "Killhouse", "year": 2008, "role": "Primary"}, {"name": "Sahara", "year": 2004, "role": "Primary"}, {"name": "Sandbox", "year": 2011, "role": "Collaborator"}, {"name": "Snipe", "year": 2005, "role": "Primary"}, {"name": "Stunt Park", "year": 2004, "role": "Collaborator"}, {"name": "The Lonely Island", "year": 2011, "role": "Primary"}, {"name": "Valley Of Death", "year": 2007, "role": "Primary"}, {"name": "Vw Bug Stunts", "year": 2006, "role": "Primary"}, {"name": "Xmas Can O Whoop Ass", "year": 2012, "role": "Primary"}, {"name": "Akina Mountain", "year": 2010, "role": "Collaborator"}, {"name": "Anika Mountain", "year": 2009, "role": "Primary"}, {"name": "Camber Sands", "year": 2004, "role": "Primary"}, {"name": "Camber Sands III", "year": 2005, "role": "Primary"}, {"name": "Canyon Drift", "year": 2009, "role": "Primary"}, {"name": "Canyon Drift Nismo", "year": 2009, "role": "Primary"}, {"name": "Ftrack", "year": 2005, "role": "Primary"}, {"name": "Ftrack Nights", "year": 2005, "role": "Primary"}, {"name": "Interstate 1964 Racing", "year": 2006, "role": "Primary"}, {"name": "Is82 Guadal Canal", "year": 2007, "role": "Primary"}, {"name": "Kantkho Island", "year": 2007, "role": "Primary"}, {"name": "Pilot Wings", "year": 2019, "role": "Primary"}, {"name": "Radio Controlled Cars", "year": 2009, "role": "Primary"}, {"name": "Sector Ix", "year": 2010, "role": "Primary"}, {"name": "Speed Canyon Ultrazomg", "year": 2009, "role": "Primary"}, {"name": "Sun City Raceway", "year": 2007, "role": "Collaborator"}, {"name": "Thunder Road", "year": 2007, "role": "Primary"}, {"name": "Tiktoki Island Circuit", "year": 2009, "role": "Primary"}, {"name": "40 Thousand Feet", "year": 2013, "role": "Primary"}, {"name": "Wingsuit", "year": 2014, "role": "Primary"}], "HrdCorHillbilly": [{"name": "Big Fun", "year": 2004, "role": "Primary"}], "Shrooms": [{"name": "Crater Valley", "year": 2012, "role": "Primary"}, {"name": "Skulls Deathrace Gmp", "year": 2005, "role": "Collaborator"}, {"name": "After The Tsunami", "year": 2013, "role": "Collaborator"}, {"name": "Hillsung", "year": 2013, "role": "Primary"}, {"name": "Mr. Snowman", "year": 2005, "role": "Primary"}, {"name": "Tropical Run", "year": 2005, "role": "Collaborator"}, {"name": "Blue Water", "year": 2012, "role": "Collaborator"}, {"name": "Chickenrun", "year": 2010, "role": "Collaborator"}, {"name": "Cold", "year": 2006, "role": "Primary"}, {"name": "Ethos VII", "year": 2012, "role": "Collaborator"}, {"name": "Ohsnap", "year": 2005, "role": "Primary"}, {"name": "Omgzilla", "year": 2005, "role": "Primary"}, {"name": "Sixteen Squares", "year": 2013, "role": "Collaborator"}, {"name": "Disco Fever", "year": 2007, "role": "Primary"}, {"name": "Omgzilla 2", "year": 2006, "role": "Primary"}, {"name": "Swimming Shores Flags", "year": 2016, "role": "Primary"}, {"name": "Swimming Shores Flags Fear", "year": 2016, "role": "Primary"}, {"name": "Omgzilla 3", "year": 2010, "role": "Primary"}, {"name": "Swimming Shores", "year": 2015, "role": "Primary"}, {"name": "Aurora City Light", "year": 2007, "role": "Primary"}, {"name": "Feed Problem", "year": 2007, "role": "Primary"}, {"name": "Frogger Teh Flag", "year": 2013, "role": "Collaborator"}, {"name": "Sandbox", "year": 2011, "role": "Collaborator"}, {"name": "Snowpeak Docks", "year": 2009, "role": "Primary"}], "HaloX": [{"name": "Crater Valley", "year": 2012, "role": "Collaborator"}, {"name": "Australia", "year": 2005, "role": "Primary"}, {"name": "Deathrace X2 (drx2)", "year": 2005, "role": "Primary"}, {"name": "Deathrace X (drx)", "year": 2004, "role": "Primary"}, {"name": "Hillsung", "year": 2013, "role": "Collaborator"}, {"name": "Blue Water", "year": 2012, "role": "Primary"}, {"name": "Forest Fire", "year": 2009, "role": "Primary"}], "TheFlyingCorpse": [{"name": "Easyrace", "year": 2004, "role": "Primary"}, {"name": "Easyrace 2", "year": 2004, "role": "Primary"}, {"name": "Battlefun", "year": 2005, "role": "Primary"}, {"name": "Parkland Coast", "year": 2007, "role": "Primary"}], "IS82 Team": [{"name": "Lakeside", "year": 2004, "role": "Primary"}, {"name": "Deathrace", "year": 2004, "role": "Primary"}, {"name": "Deathrace II", "year": 2006, "role": "Primary"}, {"name": "Aurora Valley", "year": 2004, "role": "Primary"}, {"name": "Canyonrun", "year": 2004, "role": "Primary"}, {"name": "Countryside", "year": 2004, "role": "Primary"}, {"name": "Highway", "year": 2004, "role": "Primary"}, {"name": "Snowpeak", "year": 2004, "role": "Primary"}, {"name": "Streets", "year": 2004, "role": "Primary"}, {"name": "Survivor Arena", "year": 2004, "role": "Primary"}, {"name": "Streetsrace", "year": 2004, "role": "Primary"}, {"name": "Tsunami", "year": 2004, "role": "Primary"}], "Skull": [{"name": "Skulls Deathrace Gmp", "year": 2005, "role": "Primary"}], "ApacheThunder": [{"name": "Skulls Deathrace Gmp", "year": 2005, "role": "Collaborator"}, {"name": "Dystopia City", "year": 2013, "role": "Primary"}, {"name": "Sixteen Squares", "year": 2013, "role": "Collaborator"}, {"name": "Endurance II", "year": 2020, "role": "Collaborator"}, {"name": "Sandbox", "year": 2011, "role": "Collaborator"}], "Reegad": [{"name": "Skulls Deathrace Gmp", "year": 2005, "role": "Collaborator"}, {"name": "After The Tsunami", "year": 2013, "role": "Collaborator"}, {"name": "Irace", "year": 2010, "role": "Primary"}, {"name": "Hillsung", "year": 2013, "role": "Collaborator"}, {"name": "Luge World", "year": 2020, "role": "Collaborator"}, {"name": "Starsky Challenge", "year": 2010, "role": "Collaborator"}, {"name": "Tropical Run", "year": 2005, "role": "Collaborator"}, {"name": "Blue Water", "year": 2012, "role": "Collaborator"}, {"name": "Chickenrun", "year": 2010, "role": "Primary"}, {"name": "Christmas Fever", "year": 2014, "role": "Collaborator"}, {"name": "Church Fever", "year": 2013, "role": "Collaborator"}, {"name": "Gads Challenge", "year": 2016, "role": "Primary"}, {"name": "Seaside Ride", "year": 2008, "role": "Collaborator"}, {"name": "Sixteen Squares", "year": 2013, "role": "Collaborator"}, {"name": "Deathrace III Extreme", "year": 2004, "role": "Collaborator"}, {"name": "Easter", "year": 2017, "role": "Collaborator"}, {"name": "GoodDayToDie!!!!", "year": 2010, "role": "Collaborator"}, {"name": "Endurance II", "year": 2020, "role": "Collaborator"}, {"name": "Feed Problem", "year": 2007, "role": "Collaborator"}, {"name": "Interstate Micro", "year": 2008, "role": "Primary"}, {"name": "Pringles", "year": 2016, "role": "Primary"}, {"name": "Sandbox", "year": 2011, "role": "Primary"}], "InstantDeath": [{"name": "Skulls Deathrace Gmp", "year": 2005, "role": "Collaborator"}, {"name": "Country Race", "year": 2004, "role": "Primary"}, {"name": "Mountainstream", "year": 2005, "role": "Primary"}, {"name": "Race Of Doom", "year": 2004, "role": "Primary"}, {"name": "Race Of Doom 2", "year": 2004, "role": "Primary"}], "GoodDayToDie!!": [{"name": "Skulls Deathrace Gmp", "year": 2005, "role": "Collaborator"}, {"name": "Trials", "year": 2009, "role": "Collaborator"}, {"name": "Zomg Boatz", "year": 2019, "role": "Collaborator"}, {"name": "After The Tsunami", "year": 2013, "role": "Collaborator"}, {"name": "Deathrace IV", "year": 2012, "role": "Primary"}, {"name": "Rough Rocks Final", "year": 2005, "role": "Collaborator"}, {"name": "Speedboat U S", "year": 2009, "role": "Collaborator"}, {"name": "Valley Of Moo", "year": 2004, "role": "Collaborator"}, {"name": "Deathrace III V3", "year": 2004, "role": "Collaborator"}, {"name": "Deathrace X (drx)", "year": 2004, "role": "Collaborator"}, {"name": "Luge World", "year": 2020, "role": "Collaborator"}, {"name": "Mario Fever", "year": 2007, "role": "Collaborator"}, {"name": "One Shot", "year": 2014, "role": "Primary"}, {"name": "Parcours Challenge", "year": 2015, "role": "Collaborator"}, {"name": "Parcours Challenge 2", "year": 2019, "role": "Collaborator"}, {"name": "Starsky Challenge", "year": 2010, "role": "Collaborator"}, {"name": "Tempel Tournament Final", "year": 2005, "role": "Collaborator"}, {"name": "The First Challenge Final", "year": 2005, "role": "Collaborator"}, {"name": "Training-Day Basics", "year": 2015, "role": "Primary"}, {"name": "Vigiland", "year": 2012, "role": "Primary"}, {"name": "Auto Stratos Challenge", "year": 2013, "role": "Primary"}, {"name": "Bad Night To Live", "year": 2011, "role": "Primary"}, {"name": "Church Fever", "year": 2013, "role": "Primary"}, {"name": "Ethos VII", "year": 2012, "role": "Collaborator"}, {"name": "Happy Cactus Tours", "year": 2020, "role": "Primary"}, {"name": "Highway Through Hell", "year": 2015, "role": "Primary"}, {"name": "Hillclimb 3", "year": 2013, "role": "Primary"}, {"name": "Life N Death", "year": 2017, "role": "Collaborator"}, {"name": "Ninja Ratchet", "year": 2013, "role": "Primary"}, {"name": "Project Pivu Final", "year": 2007, "role": "Collaborator"}, {"name": "Sixteen Squares", "year": 2013, "role": "Collaborator"}, {"name": "Skydive Final", "year": 2004, "role": "Collaborator"}, {"name": "Streets Parcours Challenge", "year": 2012, "role": "Primary"}, {"name": "Almost Easy", "year": 2011, "role": "Primary"}, {"name": "Auto Cessna Challenge", "year": 2011, "role": "Primary"}, {"name": "Deathrace II Extreme", "year": 2012, "role": "Primary"}, {"name": "GoodDayToDie!! 3", "year": 2014, "role": "Primary"}, {"name": "GoodDayToDie!!!!", "year": 2010, "role": "Primary"}, {"name": "GoodDayToDie!!!! 2", "year": 2010, "role": "Primary"}, {"name": "Split Decision", "year": 2011, "role": "Primary"}, {"name": "Almost Easy The Sequel", "year": 2014, "role": "Primary"}, {"name": "Ninja Ratchet 10", "year": 2018, "role": "Primary"}, {"name": "Ninja Ratchet 2", "year": 2013, "role": "Primary"}, {"name": "Ninja Ratchet 3", "year": 2013, "role": "Primary"}, {"name": "Ninja Ratchet 4", "year": 2013, "role": "Primary"}, {"name": "Ninja Ratchet 5", "year": 2014, "role": "Primary"}, {"name": "Ninja Ratchet 6", "year": 2014, "role": "Primary"}, {"name": "Ninja Ratchet 7", "year": 2016, "role": "Primary"}, {"name": "Ninja Ratchet 8", "year": 2017, "role": "Primary"}, {"name": "Ninja Ratchet 9", "year": 2018, "role": "Primary"}, {"name": "Room Of Gloom 2", "year": 2010, "role": "Collaborator"}, {"name": "Training-Day", "year": 2012, "role": "Primary"}, {"name": "Training-Day 2", "year": 2013, "role": "Primary"}, {"name": "Almost Easy The Threequel", "year": 2025, "role": "Primary"}, {"name": "Deathrace IV Extreme", "year": 2025, "role": "Primary"}, {"name": "Endurance II", "year": 2020, "role": "Collaborator"}, {"name": "Einweihungsparty", "year": 2009, "role": "Collaborator"}, {"name": "Frogger Teh Flag", "year": 2013, "role": "Collaborator"}, {"name": "Interstate Eagles Nest", "year": 2013, "role": "Primary"}, {"name": "Sandbox", "year": 2011, "role": "Collaborator"}, {"name": "Survivor Arena Extreme", "year": 2012, "role": "Primary"}, {"name": "The Lonely Island", "year": 2011, "role": "Collaborator"}, {"name": "Under Construction Day 2", "year": 2018, "role": "Primary"}, {"name": "Under Construction Day 3", "year": 2018, "role": "Primary"}, {"name": "Zookcam", "year": 2011, "role": "Primary"}, {"name": "Baytown Races", "year": 2018, "role": "Primary"}, {"name": "Burnout", "year": 2007, "role": "Collaborator"}], "Hipshot": [{"name": "Skulls Deathrace Gmp", "year": 2005, "role": "Collaborator"}, {"name": "After The Tsunami", "year": 2013, "role": "Collaborator"}], "Sp!tfire": [{"name": "Trials", "year": 2009, "role": "Primary"}, {"name": "Mario Fever", "year": 2007, "role": "Primary"}, {"name": "Chickenrun", "year": 2010, "role": "Collaborator"}, {"name": "Is Construct (Single Player Only)", "year": 2008, "role": "Primary"}, {"name": "Seaside Ride", "year": 2008, "role": "Collaborator"}, {"name": "Akina Mountain", "year": 2010, "role": "Collaborator"}, {"name": "Burnout", "year": 2007, "role": "Primary"}], "Indy": [{"name": "Water Race", "year": 2019, "role": "Primary"}, {"name": "Island Race", "year": 2008, "role": "Primary"}, {"name": "Mario Fever", "year": 2007, "role": "Collaborator"}, {"name": "Gutted", "year": 2009, "role": "Collaborator"}, {"name": "Sixteen Squares", "year": 2013, "role": "Collaborator"}, {"name": "Yoshi Desert", "year": 2009, "role": "Primary"}], "TakerPhenom": [{"name": "Zomg Boatz", "year": 2019, "role": "Primary"}, {"name": "Luge World", "year": 2020, "role": "Primary"}, {"name": "Monster Truck Madness Gmp", "year": 2004, "role": "Collaborator"}, {"name": "Mt Stuntmore V2", "year": 2005, "role": "Primary"}], "DTM Racer": [{"name": "2005", "year": 2005, "role": "Primary"}, {"name": "2006", "year": 2006, "role": "Primary"}, {"name": "Trap Up And Down", "year": 2004, "role": "Primary"}, {"name": "Intercity", "year": 2006, "role": "Primary"}], "KSO": [{"name": "2005", "year": 2005, "role": "Collaborator"}], "ToxicTeaBag": [{"name": "After The Tsunami", "year": 2013, "role": "Primary"}, {"name": "Rough Rocks Final", "year": 2005, "role": "Primary"}, {"name": "Tropical Run", "year": 2005, "role": "Primary"}, {"name": "Ethos VII", "year": 2012, "role": "Primary"}, {"name": "The Arena Cat And Mouse", "year": 2010, "role": "Primary"}, {"name": "The Quarry", "year": 2005, "role": "Collaborator"}], "Skyline": [{"name": "Dakar Rally", "year": 2004, "role": "Primary"}, {"name": "Skylines The Limit", "year": 2004, "role": "Primary"}, {"name": "Gazala Interstate", "year": 2004, "role": "Collaborator"}], "Saber Clash": [{"name": "Daredevils Paradise", "year": 2004, "role": "Primary"}], "Destruction": [{"name": "Ice Rally", "year": 2005, "role": "Primary"}], "Lemming Man": [{"name": "Lemmingmap", "year": 2012, "role": "Primary"}, {"name": "Pipefun V3", "year": 2005, "role": "Primary"}, {"name": "Sewer Run", "year": 2005, "role": "Collaborator"}], "Twisted Metal": [{"name": "Rough Rocks Final", "year": 2005, "role": "Collaborator"}, {"name": "Buggy Battle 3 V2", "year": 2005, "role": "Collaborator"}, {"name": "Hell Alamein", "year": 2006, "role": "Primary"}, {"name": "Mt Stuntmore V2", "year": 2005, "role": "Collaborator"}], "Rubba_Chikin": [{"name": "Rough Rocks Final", "year": 2005, "role": "Collaborator"}, {"name": "Chikin run", "year": 2004, "role": "Primary"}, {"name": "Aurora Valley Stw", "year": 2010, "role": "Primary"}, {"name": "Le Mans On The Highway", "year": 2011, "role": "Primary"}, {"name": "Parkland Coast", "year": 2007, "role": "Collaborator"}, {"name": "The Quarry", "year": 2005, "role": "Primary"}, {"name": "Akina Mountain", "year": 2010, "role": "Primary"}, {"name": "Project Slip N Slide", "year": 2010, "role": "Primary"}, {"name": "Project Slip N Slide P Class", "year": 2010, "role": "Primary"}, {"name": "Sun City Raceway", "year": 2007, "role": "Primary"}], "Ultimyss": [{"name": "Snow Day", "year": 2005, "role": "Primary"}, {"name": "Death GMP", "year": 2005, "role": "Primary"}], "Unforgiven": [{"name": "Speedboat U S", "year": 2009, "role": "Primary"}, {"name": "Streets Rcc", "year": 2009, "role": "Primary"}], "Presston": [{"name": "Supercross", "year": 2005, "role": "Primary"}, {"name": "Tropical Run", "year": 2005, "role": "Collaborator"}, {"name": "Moon Mountain", "year": 2006, "role": "Primary"}, {"name": "Problematic Flags", "year": 2009, "role": "Primary"}, {"name": "Problematic", "year": 2005, "role": "Primary"}, {"name": "Splat", "year": 2006, "role": "Primary"}, {"name": "Desert Rush", "year": 2004, "role": "Primary"}], "Mr Moo": [{"name": "Valley Of Moo", "year": 2004, "role": "Primary"}, {"name": "Maze", "year": 2004, "role": "Primary"}, {"name": "Twist Of Doom", "year": 2004, "role": "Primary"}], "Pavilion": [{"name": "Ampa Hbu", "year": 2006, "role": "Primary"}, {"name": "Ampa Hbu 2", "year": 2006, "role": "Primary"}], "b_w": [{"name": "Buggy Battle", "year": 2004, "role": "Primary"}, {"name": "Buggy Battle 2", "year": 2004, "role": "Primary"}, {"name": "Buggy Battle 3 V2", "year": 2005, "role": "Primary"}, {"name": "Snow Town", "year": 2006, "role": "Primary"}, {"name": "Under Construction", "year": 2004, "role": "Primary"}], "Hostileweaselnuts": [{"name": "Coppermine", "year": 2004, "role": "Primary"}], "Sniperjack": [{"name": "Deathrace Easter", "year": 2011, "role": "Primary"}, {"name": "Deathrace II Easter", "year": 2012, "role": "Primary"}, {"name": "Sixteen Squares", "year": 2013, "role": "Collaborator"}, {"name": "Deathrace III Extreme", "year": 2004, "role": "Primary"}, {"name": "Easter", "year": 2017, "role": "Primary"}, {"name": "Disco Wars", "year": 2012, "role": "Primary"}, {"name": "Feed Problem", "year": 2007, "role": "Collaborator"}], "Morphix": [{"name": "Deathrace III V3", "year": 2004, "role": "Primary"}], "Joe Limon": [{"name": "Deathrace III V3", "year": 2004, "role": "Collaborator"}, {"name": "Deathrace X (drx)", "year": 2004, "role": "Collaborator"}, {"name": "Castle", "year": 2004, "role": "Primary"}, {"name": "In Ice", "year": 2007, "role": "Primary"}, {"name": "Monster Truck Madness Gmp", "year": 2004, "role": "Primary"}], "Ace": [{"name": "Deathrace Sky", "year": 2004, "role": "Primary"}, {"name": "Ultimate", "year": 2004, "role": "Primary"}, {"name": "Aces Desert Race", "year": 2004, "role": "Primary"}, {"name": "Final Showdown", "year": 2004, "role": "Primary"}], "Jerry Seinfeld": [{"name": "Deathrace Sky", "year": 2004, "role": "Collaborator"}, {"name": "Skydive Final", "year": 2004, "role": "Collaborator"}], "Zorak": [{"name": "Dreamworld", "year": 2004, "role": "Primary"}], "BryceRice": [{"name": "Everfree Forest", "year": 2013, "role": "Primary"}, {"name": "Starsky Challenge", "year": 2010, "role": "Collaborator"}], "Batmoutarde": [{"name": "Four Elements", "year": 2013, "role": "Primary"}, {"name": "Summer Trip Flags", "year": 2008, "role": "Primary"}, {"name": "Summer Trip", "year": 2007, "role": "Primary"}], "Overdosed": [{"name": "Grand Canyon", "year": 2004, "role": "Primary"}], "BF1942 Conversion": [{"name": "Parcours Challenge", "year": 2015, "role": "Primary"}, {"name": "Parcours Challenge 2", "year": 2019, "role": "Primary"}], "|np.dc| Manef": [{"name": "Sky Diver", "year": 2004, "role": "Primary"}], "MJR. Annihilator": [{"name": "Spiral To Hell", "year": 2006, "role": "Primary"}], "Starsky": [{"name": "Starsky Challenge", "year": 2010, "role": "Primary"}], "Wideor": [{"name": "The First Challenge Final", "year": 2005, "role": "Primary"}], "Shooter McGavin": [{"name": "Action", "year": 2011, "role": "Primary"}, {"name": "Eightouncesofcaptain", "year": 2011, "role": "Primary"}], "Alex[ITA]": [{"name": "Christmas Fever", "year": 2014, "role": "Primary"}, {"name": "Seaside Ride", "year": 2008, "role": "Primary"}, {"name": "Island Rage", "year": 2015, "role": "Primary"}, {"name": "Lofoti Islands", "year": 2024, "role": "Primary"}], "Gutwrench": [{"name": "Guts Deathrace V2", "year": 2005, "role": "Primary"}, {"name": "Hell And Back", "year": 2005, "role": "Primary"}], "Chips": [{"name": "Gutted", "year": 2009, "role": "Primary"}], "Moss": [{"name": "Life N Death", "year": 2017, "role": "Primary"}], "Massive Loaf": [{"name": "Loafs Deathrace", "year": 2004, "role": "Primary"}], "Killer E-wok": [{"name": "Ohsnap", "year": 2005, "role": "Collaborator"}], "Slick": [{"name": "Problematic Flags", "year": 2009, "role": "Collaborator"}, {"name": "Summer Trip Flags", "year": 2008, "role": "Collaborator"}], "Chewbacca Pivu": [{"name": "Project Pivu Final", "year": 2007, "role": "Primary"}], "icekills": [{"name": "Roadrage Revamp", "year": 2004, "role": "Primary"}], "Colin": [{"name": "Ruined Vacation", "year": 2004, "role": "Primary"}], "N/P-Cool Blue (nepheus)": [{"name": "Sewer Run", "year": 2005, "role": "Primary"}, {"name": "Step To Step", "year": 2005, "role": "Primary"}], "Kahuna": [{"name": "Sixteen Squares", "year": 2013, "role": "Collaborator"}, {"name": "Deathrace III Extreme", "year": 2004, "role": "Collaborator"}], "Cochrane": [{"name": "Sixteen Squares", "year": 2013, "role": "Collaborator"}], "MarkNL": [{"name": "Sixteen Squares", "year": 2013, "role": "Collaborator"}], "BulletProofMonk": [{"name": "Sixteen Squares", "year": 2013, "role": "Collaborator"}], "Jim2102": [{"name": "Sixteen Squares", "year": 2013, "role": "Collaborator"}], "Jahovenator": [{"name": "Sky City", "year": 2007, "role": "Primary"}], "Jack the Stripper": [{"name": "Skydive Final", "year": 2004, "role": "Primary"}], "SPAZ": [{"name": "Summer Nights", "year": 2005, "role": "Primary"}], "Sean": [{"name": "Too Blue", "year": 2004, "role": "Primary"}], "Tayler": [{"name": "Tracked To The Max", "year": 2010, "role": "Primary"}], "Fearofthedark": [{"name": "Swimming Shores Flags", "year": 2016, "role": "Collaborator"}, {"name": "Swimming Shores Flags Fear", "year": 2016, "role": "Collaborator"}, {"name": "Cessna Challenge Redux", "year": 2015, "role": "Collaborator"}], "qb7": [{"name": "Black Ice", "year": 2017, "role": "Primary"}, {"name": "Black Ice No Fog", "year": 2017, "role": "Primary"}], "Tankmaster": [{"name": "Cessna Challenge Redux", "year": 2015, "role": "Collaborator"}], "The Lawn Ranger": [{"name": "Aerospace Assault", "year": 2009, "role": "Primary"}, {"name": "Darts Vtwo Battle", "year": 2009, "role": "Primary"}, {"name": "Morning Wood", "year": 2009, "role": "Primary"}], "Gray Fox": [{"name": "Battle On Deathrace", "year": 2004, "role": "Primary"}, {"name": "Gazala Interstate", "year": 2004, "role": "Primary"}], "Rich": [{"name": "Battle Park", "year": 2004, "role": "Primary"}, {"name": "Speed Canyon", "year": 2004, "role": "Primary"}], "Rampage": [{"name": "Brownfield", "year": 2005, "role": "Primary"}, {"name": "The Crater", "year": 2005, "role": "Primary"}], "KohrakSwarm": [{"name": "Hills", "year": 2004, "role": "Primary"}], "m7d7g7": [{"name": "Stunt Park", "year": 2004, "role": "Primary"}]};
     var currentSelectedNode = null;
 
-    // Function to render the map list based on the selected sort criteria
     function renderMapList() {
         if (!currentSelectedNode) return;
         
-        var maps = authorMapsData[currentSelectedNode].slice(); // clone array
+        var maps = authorMapsData[currentSelectedNode].slice(); 
         var sortType = document.getElementById('sort-maps').value;
         
-        // Sorting logic
         maps.sort(function(a, b) {
             if (sortType === 'year') {
-                if (a.year !== b.year) return a.year - b.year; // Sort by year
-                return a.name.localeCompare(b.name);           // Fallback to name if same year
+                if (a.year !== b.year) return a.year - b.year; 
+                return a.name.localeCompare(b.name);           
             } else {
-                return a.name.localeCompare(b.name);           // Sort purely by name
+                return a.name.localeCompare(b.name);           
             }
         });
         
         var mapsListEl = document.getElementById('detail-maps');
         mapsListEl.innerHTML = ""; 
         
-        // Render each item
         maps.forEach(function(m) {
             var li = document.createElement('li');
             li.className = 'map-item';
             
-            // Add visual tags based on their specific role in this map
             var prefix = "";
             if (m.role === 'Primary') {
                 prefix = "<span class='author-tag'>[AUTHOR]</span>";
@@ -266,7 +294,6 @@
         });
     }
 
-    // Re-render the list immediately if the user changes the sort dropdown
     document.getElementById('sort-maps').addEventListener('change', renderMapList);
 
     setTimeout(function() {
@@ -319,13 +346,12 @@
     network.on("selectNode", function(params) {
         if (params.nodes.length === 1) {
             var selectedNode = params.nodes[0];
-            currentSelectedNode = selectedNode; // Track global state for sorting updates
+            currentSelectedNode = selectedNode; 
             
             var connectedNodes = network.getConnectedNodes(selectedNode);
             var allNodes = nodes.get();
             var allEdges = edges.get();
             
-            // Highlight/Fade nodes
             for (var i = 0; i < allNodes.length; i++) {
                 if (allNodes[i].id !== selectedNode && !connectedNodes.includes(allNodes[i].id)) {
                     allNodes[i].color = "rgba(100, 100, 100, 0.08)";
@@ -336,7 +362,6 @@
                 }
             }
             
-            // Highlight/Fade edges
             for (var j = 0; j < allEdges.length; j++) {
                 if (allEdges[j].from === selectedNode || allEdges[j].to === selectedNode) {
                     allEdges[j].color = { color: "rgba(255, 255, 255, 0.5)", highlight: "rgba(255, 255, 255, 0.6)" };
@@ -348,13 +373,20 @@
             nodes.update(allNodes);
             edges.update(allEdges);
 
-            // Update UI Panel Display
             var detailsContainer = document.getElementById('author-details');
             var nameEl = document.getElementById('detail-name');
+            var subtitleEl = document.getElementById('detail-subtitle');
             
             nameEl.innerText = selectedNode + "'s Contributions (" + authorMapsData[selectedNode].length + ")";
             
-            // Call the shared render function
+            // Toggle subtitle logic specifically for Goodday
+            if (selectedNode === 'Goodday') {
+                subtitleEl.innerHTML = "*Era based on original maps only, excluding historical revamps.";
+                subtitleEl.style.display = "block";
+            } else {
+                subtitleEl.style.display = "none";
+            }
+            
             renderMapList();
             
             detailsContainer.style.display = "flex";
@@ -362,7 +394,7 @@
     });
 
     network.on("deselectNode", function(params) {
-        currentSelectedNode = null; // Clear tracking
+        currentSelectedNode = null; 
         
         var allNodes = nodes.get();
         var allEdges = edges.get();
@@ -379,7 +411,6 @@
         nodes.update(allNodes);
         edges.update(allEdges);
 
-        // Hide UI Panel details
         document.getElementById('author-details').style.display = "none";
     });
 </script>
