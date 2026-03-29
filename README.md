@@ -2,6 +2,8 @@
 
 This project generates a dynamic, interactive network graph that visualizes the collaborations between map authors in the IS82 modding community. It processes map data from a CSV file using a Python script and outputs a single, self-contained `index.html` file with a rich user interface for exploration.
 
+**🌐 View the Live Interactive Graph Here!** *(https://deadcode94.github.io/IS82-Contribution-Graph/)*
+
 <img width="1100" height="780" alt="graph-ui" src="https://github.com/user-attachments/assets/3d7dfffd-6969-402f-8e94-48de608cd641" />
 
 ## Features
