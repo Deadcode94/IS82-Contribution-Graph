@@ -6,53 +6,61 @@ import json
 # 1. Load and Prepare the Data
 df = pd.read_csv('IS82 Maps - IS82 Maps.csv')
 
-def get_authors(row):
-    authors = []
+def get_parsed_authors(row):
+    primary = []
+    collaborators = []
+    
     # Extract primary author(s)
     if pd.notna(row['Author']):
-        authors.extend([a.strip() for a in str(row['Author']).split(',')])
+        primary.extend([a.strip() for a in str(row['Author']).split(',') if a.strip()])
+        
     # Extract co-authors
     if pd.notna(row['Other Authors']):
-        authors.extend([a.strip() for a in str(row['Other Authors']).split(',')])
+        collaborators.extend([a.strip() for a in str(row['Other Authors']).split(',') if a.strip()])
         
-    # Remove any empty strings
-    return [a for a in authors if a]
+    return primary, collaborators
 
 # Create lists and dictionaries to track all graph metrics
 collaborations = []
 all_authors = []
-author_map_names = {}
+author_maps_data = {}
 author_years = {}
 
 for idx, row in df.iterrows():
     map_name = str(row['Name']).strip()
     map_year = int(row['Year']) if pd.notna(row['Year']) else 2004
     
-    # Format the map string to include the year immediately
-    formatted_map_name = f"{map_name} ({map_year})"
+    primary_authors, collaborator_authors = get_parsed_authors(row)
+    combined_authors = primary_authors + collaborator_authors
+    all_authors.extend(combined_authors)
     
-    authors_in_map = get_authors(row)
-    all_authors.extend(authors_in_map)
-    
-    for author in authors_in_map:
-        # Track formatted map names (with year) per author
-        if author not in author_map_names:
-            author_map_names[author] = []
-        author_map_names[author].append(formatted_map_name)
-        
-        # Track active years per author for era calculation
-        if author not in author_years:
+    # Track complex map data (Name, Year, Role) for the frontend UI
+    for author in primary_authors:
+        if author not in author_maps_data:
+            author_maps_data[author] = []
             author_years[author] = []
+        
+        # Prevent duplicates if data is messy
+        if not any(m['name'] == map_name for m in author_maps_data[author]):
+            author_maps_data[author].append({'name': map_name, 'year': map_year, 'role': 'Primary'})
+        author_years[author].append(map_year)
+        
+    for author in collaborator_authors:
+        if author not in author_maps_data:
+            author_maps_data[author] = []
+            author_years[author] = []
+            
+        if not any(m['name'] == map_name for m in author_maps_data[author]):
+            author_maps_data[author].append({'name': map_name, 'year': map_year, 'role': 'Collaborator'})
         author_years[author].append(map_year)
     
-    # If there are at least two authors, create collaboration pairs
-    if len(authors_in_map) > 1:
-        pairs = list(itertools.combinations(sorted(authors_in_map), 2))
+    # If there are at least two authors in total, create collaboration pairs
+    if len(combined_authors) > 1:
+        pairs = list(itertools.combinations(sorted(combined_authors), 2))
         collaborations.extend(pairs)
 
-# Clean and sort the maps for the detailed UI panel
-author_maps_dict = {author: sorted(list(set(maps))) for author, maps in author_map_names.items()}
-author_maps_json = json.dumps(author_maps_dict)
+# Convert the complex dictionary to JSON to inject it into JS later
+author_maps_json = json.dumps(author_maps_data)
 
 # 2. Calculate Metrics for the Graph
 author_counts = pd.Series(all_authors).value_counts()
@@ -61,7 +69,6 @@ edge_counts = pd.Series(collaborations).value_counts()
 # 3. Create the Interactive Graph using Pyvis
 net = Network(height='100vh', width='100%', bgcolor='#222222', font_color='white', notebook=False)
 
-# Define explicit base edge color 
 base_edge_color = "rgba(170, 170, 170, 0.3)"
 
 # 4. Set Global Options 
@@ -115,17 +122,17 @@ for author, count in author_counts.items():
     activity_period = f"{min_year}-{max_year}" if min_year != max_year else f"{min_year}"
     
     if min_year <= 2007:
-        era_color = "#ffd700"  # Gold for Veterans
+        era_color = "#ffd700"  # Gold
     elif min_year <= 2012:
-        era_color = "#20b2aa"  # Teal for 2nd Gen
+        era_color = "#20b2aa"  # Teal
     else:
-        era_color = "#9370db"  # Purple for New Era
+        era_color = "#9370db"  # Purple
         
     hover_text = (
         f"Author: {author}\n"
         f"Active: {activity_period}\n"
-        f"Total Maps: {count}\n"
-        f"(Click to see all maps)"
+        f"Total Contributions: {count}\n"
+        f"(Click to see details)"
     )
     
     net.add_node(
@@ -168,7 +175,7 @@ custom_injection = f"""
         border-radius: 8px;
         border: 1px solid #444;
         color: white;
-        width: 320px; /* Slightly wider to accommodate the year strings */
+        width: 320px; 
         box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
         max-height: 90vh;
         display: flex;
@@ -182,7 +189,7 @@ custom_injection = f"""
     .legend-list {{ list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.8; }}
     .legend-color {{ display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }}
     
-    /* Styling for the dynamic details section */
+    /* Dynamic details section */
     #author-details {{
         display: none;
         margin-top: 15px;
@@ -190,10 +197,11 @@ custom_injection = f"""
         padding-top: 15px;
         flex-grow: 1;
         overflow: hidden;
-        display: flex; 
         flex-direction: column;
     }}
-    #detail-name {{ margin-top: 0; color: #5a9bd4; font-size: 15px; }}
+    #detail-name {{ margin-top: 0; color: #5a9bd4; font-size: 15px; margin-bottom: 10px; }}
+    #sort-maps {{ width: 100%; padding: 5px; margin-bottom: 10px; background: #222; color: #ddd; border: 1px solid #555; border-radius: 4px; font-size: 12px; }}
+    
     #detail-maps-container {{
         overflow-y: auto;
         padding-right: 5px;
@@ -204,7 +212,12 @@ custom_injection = f"""
     #detail-maps-container::-webkit-scrollbar-track {{ background: #222; border-radius: 3px; }}
     #detail-maps-container::-webkit-scrollbar-thumb {{ background: #555; border-radius: 3px; }}
     #detail-maps-container::-webkit-scrollbar-thumb:hover {{ background: #777; }}
-    .map-item {{ font-size: 12px; margin-bottom: 4px; color: #ddd; }}
+    
+    .map-item {{ font-size: 13px; margin-bottom: 6px; color: #ddd; display: flex; align-items: flex-start; }}
+    
+    /* New styling for AUTHOR and COLLAB tags */
+    .author-tag {{ color: #e74c3c; font-size: 10px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }}
+    .collab-tag {{ color: #888888; font-size: 10px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }}
 </style>
 
 <div id="custom-ui-panel">
@@ -224,13 +237,19 @@ custom_injection = f"""
         
         <h4>Metrics</h4>
         <ul class="legend-list">
-            <li>◯ Node Size = Maps Created</li>
+            <li>◯ Node Size = Contributions</li>
             <li>━ Thickness = Collaborations</li>
         </ul>
     </div>
     
     <div id="author-details" style="display: none;">
         <h4 id="detail-name"></h4>
+        
+        <select id="sort-maps">
+            <option value="year">Sort by Release Year (Oldest First)</option>
+            <option value="name">Sort Alphabetically (A-Z)</option>
+        </select>
+        
         <div id="detail-maps-container">
             <ul id="detail-maps" class="legend-list"></ul>
         </div>
@@ -240,8 +259,51 @@ custom_injection = f"""
 <script type="text/javascript">
     var defaultEdgeColor = "{base_edge_color}";
     var originalColors = {{}};
-    // Inject the Python dictionary of all formatted maps directly into JS
+    // Complex JSON containing name, year, and role for each map
     var authorMapsData = {author_maps_json};
+    var currentSelectedNode = null;
+
+    // Function to render the map list based on the selected sort criteria
+    function renderMapList() {{
+        if (!currentSelectedNode) return;
+        
+        var maps = authorMapsData[currentSelectedNode].slice(); // clone array
+        var sortType = document.getElementById('sort-maps').value;
+        
+        // Sorting logic
+        maps.sort(function(a, b) {{
+            if (sortType === 'year') {{
+                if (a.year !== b.year) return a.year - b.year; // Sort by year
+                return a.name.localeCompare(b.name);           // Fallback to name if same year
+            }} else {{
+                return a.name.localeCompare(b.name);           // Sort purely by name
+            }}
+        }});
+        
+        var mapsListEl = document.getElementById('detail-maps');
+        mapsListEl.innerHTML = ""; 
+        
+        // Render each item
+        maps.forEach(function(m) {{
+            var li = document.createElement('li');
+            li.className = 'map-item';
+            
+            // Add visual tags based on their specific role in this map
+            var prefix = "";
+            if (m.role === 'Primary') {{
+                prefix = "<span class='author-tag'>[AUTHOR]</span>";
+            }} else if (m.role === 'Collaborator') {{
+                prefix = "<span class='collab-tag'>[COLLAB]</span>";
+            }}
+            
+            var textContent = "<span>" + m.name + " (" + m.year + ")</span>";
+            li.innerHTML = prefix + textContent;
+            mapsListEl.appendChild(li);
+        }});
+    }}
+
+    // Re-render the list immediately if the user changes the sort dropdown
+    document.getElementById('sort-maps').addEventListener('change', renderMapList);
 
     setTimeout(function() {{
         nodes.get().forEach(function(n) {{
@@ -293,6 +355,8 @@ custom_injection = f"""
     network.on("selectNode", function(params) {{
         if (params.nodes.length === 1) {{
             var selectedNode = params.nodes[0];
+            currentSelectedNode = selectedNode; // Track global state for sorting updates
+            
             var connectedNodes = network.getConnectedNodes(selectedNode);
             var allNodes = nodes.get();
             var allEdges = edges.get();
@@ -320,27 +384,22 @@ custom_injection = f"""
             nodes.update(allNodes);
             edges.update(allEdges);
 
-            // Update UI Panel with the exhaustive maps list including years
+            // Update UI Panel Display
             var detailsContainer = document.getElementById('author-details');
             var nameEl = document.getElementById('detail-name');
-            var mapsListEl = document.getElementById('detail-maps');
             
-            nameEl.innerText = selectedNode + "'s Maps (" + authorMapsData[selectedNode].length + ")";
-            mapsListEl.innerHTML = ""; // Clear previous maps
+            nameEl.innerText = selectedNode + "'s Contributions (" + authorMapsData[selectedNode].length + ")";
             
-            // Populate new maps
-            authorMapsData[selectedNode].forEach(function(mapName) {{
-                var li = document.createElement('li');
-                li.className = 'map-item';
-                li.innerText = "• " + mapName; // This now contains the map name and the year
-                mapsListEl.appendChild(li);
-            }});
+            // Call the shared render function
+            renderMapList();
             
-            detailsContainer.style.display = "flex"; // Show panel
+            detailsContainer.style.display = "flex";
         }}
     }});
 
     network.on("deselectNode", function(params) {{
+        currentSelectedNode = null; // Clear tracking
+        
         var allNodes = nodes.get();
         var allEdges = edges.get();
         
@@ -365,4 +424,4 @@ custom_injection = f"""
 with open(html_filename, 'a', encoding='utf-8') as f:
     f.write(custom_injection)
 
-print("Interactive graph generated successfully. Map lists now include release years.")
+print("Interactive graph generated successfully. Visual distinction between PRIMARY and COLLABORATOR added.")
