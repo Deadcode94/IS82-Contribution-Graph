@@ -56,6 +56,7 @@ for (author1, author2), weight in edge_counts.items():
 # Configure physics for an optimal force-directed layout
 net.barnes_hut()
 
-# Generate the HTML file
-net.show('index.html')
+# Save the graph to an HTML file instead of trying to show it in a notebook environment
+net.save_graph('index.html')
+
 print("Interactive graph generated successfully as 'index.html'. Ready for GitHub Pages deployment.")
