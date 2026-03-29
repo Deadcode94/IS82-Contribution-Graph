@@ -100,7 +100,7 @@
                   // adding nodes and edges to the graph
                   data = {nodes: nodes, edges: edges};
 
-                  var options = {"interaction": {"hover": true, "selectConnectedEdges": true}, "nodes": {"shape": "dot", "font": {"size": 200, "face": "Arial", "strokeWidth": 8, "strokeColor": "#222222"}}, "edges": {"color": {"color": "rgba(170,170,170,0.3)", "highlight": "rgba(255,255,255,0.5)", "hover": "rgba(255,255,255,0.5)"}, "smooth": {"type": "continuous"}}, "physics": {"solver": "repulsion", "repulsion": {"nodeDistance": 3000, "centralGravity": 0.01, "springLength": 3000, "springConstant": 0.005, "damping": 0.09}, "minVelocity": 0.75}};
+                  var options = {"interaction": {"hover": true, "selectConnectedEdges": true}, "nodes": {"shape": "dot", "font": {"size": 200, "face": "Arial", "strokeWidth": 8, "strokeColor": "#222222", "background": "rgba(34,34,34,0.8)"}}, "edges": {"color": {"color": "rgba(170,170,170,0.3)", "highlight": "rgba(255,255,255,0.5)", "hover": "rgba(255,255,255,0.5)"}, "smooth": {"type": "continuous"}}, "physics": {"solver": "repulsion", "repulsion": {"nodeDistance": 3000, "centralGravity": 0.01, "springLength": 3000, "springConstant": 0.005, "damping": 0.09}, "minVelocity": 0.75}};
 
                   
 
@@ -126,7 +126,6 @@
     </body>
 </html>
 <style type="text/css">
-    /* Remove the default border added by Pyvis around the canvas */
     #mynetwork {
         border: none !important;
         outline: none !important;
@@ -134,7 +133,6 @@
 </style>
 
 <script type="text/javascript">
-    // Define the exact base colors used in Python
     var defaultNodeColor = "#5a9bd4";
     var defaultEdgeColor = "rgba(170, 170, 170, 0.3)";
 
@@ -145,21 +143,20 @@
             var allNodes = nodes.get();
             var allEdges = edges.get();
             
-            // Fade out nodes that are NOT connected to the selected author
             for (var i = 0; i < allNodes.length; i++) {
                 if (allNodes[i].id !== selectedNode && !connectedNodes.includes(allNodes[i].id)) {
                     allNodes[i].color = "rgba(100, 100, 100, 0.08)";
-                    allNodes[i].font = { color: "rgba(255, 255, 255, 0.08)", strokeColor: "rgba(0, 0, 0, 0.05)", strokeWidth: 8 };
+                    // Remove the background pill for unselected nodes to declutter the view
+                    allNodes[i].font = { color: "rgba(255, 255, 255, 0.08)", strokeColor: "rgba(0, 0, 0, 0.05)", strokeWidth: 8, background: "rgba(34, 34, 34, 0.0)" };
                 } else {
                     allNodes[i].color = defaultNodeColor; 
-                    allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 };
+                    // Maintain the background pill for active nodes
+                    allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" };
                 }
             }
             
-            // Highlight connections for the selected node and fade the rest
             for (var j = 0; j < allEdges.length; j++) {
                 if (allEdges[j].from === selectedNode || allEdges[j].to === selectedNode) {
-                    // Replaced solid white with a semi-transparent white to reduce brightness
                     allEdges[j].color = { color: "rgba(255, 255, 255, 0.5)", highlight: "rgba(255, 255, 255, 0.6)" };
                 } else {
                     allEdges[j].color = { color: "rgba(170, 170, 170, 0.05)" }; 
@@ -175,13 +172,12 @@
         var allNodes = nodes.get();
         var allEdges = edges.get();
         
-        // Restore all nodes to full explicit visibility
         for (var i = 0; i < allNodes.length; i++) {
             allNodes[i].color = defaultNodeColor;
-            allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 };
+            // Restore the background pill for all nodes
+            allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" };
         }
         
-        // Restore all edges to explicit default transparent color
         for (var j = 0; j < allEdges.length; j++) {
             allEdges[j].color = defaultEdgeColor;
         }

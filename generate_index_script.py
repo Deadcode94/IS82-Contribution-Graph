@@ -39,12 +39,12 @@ net = Network(height='1000px', width='100%', bgcolor='#222222', font_color='whit
 
 # Define explicit base colors 
 base_node_color = "#5a9bd4"
-# Using RGBA for default edges to make them highly transparent (alpha = 0.3)
 base_edge_color = "rgba(170, 170, 170, 0.3)"
 
-# 4. Set Global Options for Physics, Shape, and Interaction
-# - Increased nodeDistance and springLength to 3000 to space out central nodes.
-# - Lowered centralGravity to 0.01 so nodes aren't pulled as tightly to the center.
+# 4. Set Global Options 
+# - Removed edge fonts to restore high framerate.
+# - Added a semi-transparent dark "background" to the node fonts to improve readability 
+#   when edges pass behind the author names.
 options = f"""
 var options = {{
   "interaction": {{
@@ -57,7 +57,8 @@ var options = {{
       "size": 200,
       "face": "Arial",
       "strokeWidth": 8,
-      "strokeColor": "#222222"
+      "strokeColor": "#222222",
+      "background": "rgba(34, 34, 34, 0.8)"
     }}
   }},
   "edges": {{
@@ -101,6 +102,7 @@ for author, count in author_counts.items():
 for (author1, author2), weight in edge_counts.items():
     edge_thickness = weight * 15 
     
+    # - Removed the 'label' attribute to fix the framerate drop.
     net.add_edge(
         author1, 
         author2, 
@@ -114,9 +116,10 @@ html_filename = 'index.html'
 net.write_html(html_filename)
 
 # 6. Inject Custom CSS and JavaScript
+# - Removed edge font logic from JS.
+# - Updated node font logic to manage the 'background' property during select/deselect.
 custom_injection = f"""
 <style type="text/css">
-    /* Remove the default border added by Pyvis around the canvas */
     #mynetwork {{
         border: none !important;
         outline: none !important;
@@ -124,7 +127,6 @@ custom_injection = f"""
 </style>
 
 <script type="text/javascript">
-    // Define the exact base colors used in Python
     var defaultNodeColor = "{base_node_color}";
     var defaultEdgeColor = "{base_edge_color}";
 
@@ -135,21 +137,20 @@ custom_injection = f"""
             var allNodes = nodes.get();
             var allEdges = edges.get();
             
-            // Fade out nodes that are NOT connected to the selected author
             for (var i = 0; i < allNodes.length; i++) {{
                 if (allNodes[i].id !== selectedNode && !connectedNodes.includes(allNodes[i].id)) {{
                     allNodes[i].color = "rgba(100, 100, 100, 0.08)";
-                    allNodes[i].font = {{ color: "rgba(255, 255, 255, 0.08)", strokeColor: "rgba(0, 0, 0, 0.05)", strokeWidth: 8 }};
+                    // Remove the background pill for unselected nodes to declutter the view
+                    allNodes[i].font = {{ color: "rgba(255, 255, 255, 0.08)", strokeColor: "rgba(0, 0, 0, 0.05)", strokeWidth: 8, background: "rgba(34, 34, 34, 0.0)" }};
                 }} else {{
                     allNodes[i].color = defaultNodeColor; 
-                    allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 }};
+                    // Maintain the background pill for active nodes
+                    allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
                 }}
             }}
             
-            // Highlight connections for the selected node and fade the rest
             for (var j = 0; j < allEdges.length; j++) {{
                 if (allEdges[j].from === selectedNode || allEdges[j].to === selectedNode) {{
-                    // Replaced solid white with a semi-transparent white to reduce brightness
                     allEdges[j].color = {{ color: "rgba(255, 255, 255, 0.5)", highlight: "rgba(255, 255, 255, 0.6)" }};
                 }} else {{
                     allEdges[j].color = {{ color: "rgba(170, 170, 170, 0.05)" }}; 
@@ -165,13 +166,12 @@ custom_injection = f"""
         var allNodes = nodes.get();
         var allEdges = edges.get();
         
-        // Restore all nodes to full explicit visibility
         for (var i = 0; i < allNodes.length; i++) {{
             allNodes[i].color = defaultNodeColor;
-            allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 }};
+            // Restore the background pill for all nodes
+            allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
         }}
         
-        // Restore all edges to explicit default transparent color
         for (var j = 0; j < allEdges.length; j++) {{
             allEdges[j].color = defaultEdgeColor;
         }}
@@ -182,8 +182,7 @@ custom_injection = f"""
 </script>
 """
 
-# Append the custom CSS and JS to the generated HTML file
 with open(html_filename, 'a', encoding='utf-8') as f:
     f.write(custom_injection)
 
-print("Interactive graph generated successfully. Center is more spaced out and active edges are less harsh.")
+print("Interactive graph generated successfully. Framerate restored and node text readability enhanced.")
