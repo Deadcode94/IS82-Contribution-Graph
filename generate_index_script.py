@@ -3,10 +3,8 @@ from pyvis.network import Network
 import itertools
 
 # 1. Load and Prepare the Data
-# Ensure the CSV file is in the same directory as the script
 df = pd.read_csv('IS82 Maps - IS82 Maps.csv')
 
-# Function to clean and retrieve the list of authors from a row
 def get_authors(row):
     authors = []
     # Extract primary author(s)
@@ -29,34 +27,163 @@ for idx, row in df.iterrows():
     
     # If there are at least two authors, create collaboration pairs
     if len(authors_in_map) > 1:
-        # itertools.combinations creates all unique pairs possible: (A,B), (A,C), (B,C)
         pairs = list(itertools.combinations(sorted(authors_in_map), 2))
         collaborations.extend(pairs)
 
 # 2. Calculate Metrics for the Graph
-# Count the total number of maps per author (used for node size)
 author_counts = pd.Series(all_authors).value_counts()
-
-# Count how many times each pair collaborated (used for edge thickness)
 edge_counts = pd.Series(collaborations).value_counts()
 
 # 3. Create the Interactive Graph using Pyvis
-net = Network(height='750px', width='100%', bgcolor='#222222', font_color='white', notebook=False)
+net = Network(height='1000px', width='100%', bgcolor='#222222', font_color='white', notebook=False)
+
+# Define explicit base colors 
+base_node_color = "#5a9bd4"
+# Using RGBA for default edges to make them highly transparent (alpha = 0.3)
+base_edge_color = "rgba(170, 170, 170, 0.3)"
+
+# 4. Set Global Options for Physics, Shape, and Interaction
+# - Increased nodeDistance and springLength to 3000 to space out central nodes.
+# - Lowered centralGravity to 0.01 so nodes aren't pulled as tightly to the center.
+options = f"""
+var options = {{
+  "interaction": {{
+    "hover": true,
+    "selectConnectedEdges": true
+  }},
+  "nodes": {{
+    "shape": "dot",
+    "font": {{
+      "size": 200,
+      "face": "Arial",
+      "strokeWidth": 8,
+      "strokeColor": "#222222"
+    }}
+  }},
+  "edges": {{
+    "color": {{
+      "color": "{base_edge_color}",
+      "highlight": "rgba(255, 255, 255, 0.5)",
+      "hover": "rgba(255, 255, 255, 0.5)"
+    }},
+    "smooth": {{
+      "type": "continuous"
+    }}
+  }},
+  "physics": {{
+    "solver": "repulsion",
+    "repulsion": {{
+      "nodeDistance": 3000,
+      "centralGravity": 0.01,
+      "springLength": 3000,
+      "springConstant": 0.005,
+      "damping": 0.09
+    }},
+    "minVelocity": 0.75
+  }}
+}}
+"""
+net.set_options(options)
 
 # Add Nodes (Authors)
 for author, count in author_counts.items():
-    # Node size is proportional to the number of maps contributed
-    net.add_node(author, label=author, title=f"Author: {author}\nTotal Maps: {count}", size=count*2)
+    node_size = 50 + (count * 5)
+    
+    net.add_node(
+        author, 
+        label=author, 
+        title=f"Author: {author}\nTotal Maps: {count}", 
+        size=node_size,
+        color=base_node_color
+    )
 
 # Add Edges (Collaborations)
 for (author1, author2), weight in edge_counts.items():
-    # Edge value defines its thickness based on the number of joint collaborations
-    net.add_edge(author1, author2, value=weight, title=f"Joint Collaborations: {weight}")
+    edge_thickness = weight * 15 
+    
+    net.add_edge(
+        author1, 
+        author2, 
+        width=edge_thickness, 
+        title=f"Joint Collaborations: {weight}",
+        color=base_edge_color
+    )
 
-# Configure physics for an optimal force-directed layout
-net.barnes_hut()
+# 5. Generate the Base HTML File
+html_filename = 'index.html'
+net.write_html(html_filename)
 
-# Save the graph to an HTML file instead of trying to show it in a notebook environment
-net.save_graph('index.html')
+# 6. Inject Custom CSS and JavaScript
+custom_injection = f"""
+<style type="text/css">
+    /* Remove the default border added by Pyvis around the canvas */
+    #mynetwork {{
+        border: none !important;
+        outline: none !important;
+    }}
+</style>
 
-print("Interactive graph generated successfully as 'index.html'. Ready for GitHub Pages deployment.")
+<script type="text/javascript">
+    // Define the exact base colors used in Python
+    var defaultNodeColor = "{base_node_color}";
+    var defaultEdgeColor = "{base_edge_color}";
+
+    network.on("selectNode", function(params) {{
+        if (params.nodes.length === 1) {{
+            var selectedNode = params.nodes[0];
+            var connectedNodes = network.getConnectedNodes(selectedNode);
+            var allNodes = nodes.get();
+            var allEdges = edges.get();
+            
+            // Fade out nodes that are NOT connected to the selected author
+            for (var i = 0; i < allNodes.length; i++) {{
+                if (allNodes[i].id !== selectedNode && !connectedNodes.includes(allNodes[i].id)) {{
+                    allNodes[i].color = "rgba(100, 100, 100, 0.08)";
+                    allNodes[i].font = {{ color: "rgba(255, 255, 255, 0.08)", strokeColor: "rgba(0, 0, 0, 0.05)", strokeWidth: 8 }};
+                }} else {{
+                    allNodes[i].color = defaultNodeColor; 
+                    allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 }};
+                }}
+            }}
+            
+            // Highlight connections for the selected node and fade the rest
+            for (var j = 0; j < allEdges.length; j++) {{
+                if (allEdges[j].from === selectedNode || allEdges[j].to === selectedNode) {{
+                    // Replaced solid white with a semi-transparent white to reduce brightness
+                    allEdges[j].color = {{ color: "rgba(255, 255, 255, 0.5)", highlight: "rgba(255, 255, 255, 0.6)" }};
+                }} else {{
+                    allEdges[j].color = {{ color: "rgba(170, 170, 170, 0.05)" }}; 
+                }}
+            }}
+            
+            nodes.update(allNodes);
+            edges.update(allEdges);
+        }}
+    }});
+
+    network.on("deselectNode", function(params) {{
+        var allNodes = nodes.get();
+        var allEdges = edges.get();
+        
+        // Restore all nodes to full explicit visibility
+        for (var i = 0; i < allNodes.length; i++) {{
+            allNodes[i].color = defaultNodeColor;
+            allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 }};
+        }}
+        
+        // Restore all edges to explicit default transparent color
+        for (var j = 0; j < allEdges.length; j++) {{
+            allEdges[j].color = defaultEdgeColor;
+        }}
+        
+        nodes.update(allNodes);
+        edges.update(allEdges);
+    }});
+</script>
+"""
+
+# Append the custom CSS and JS to the generated HTML file
+with open(html_filename, 'a', encoding='utf-8') as f:
+    f.write(custom_injection)
+
+print("Interactive graph generated successfully. Center is more spaced out and active edges are less harsh.")
