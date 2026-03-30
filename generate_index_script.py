@@ -90,7 +90,8 @@ options = f"""
 var options = {{
   "interaction": {{
     "hover": true,
-    "selectConnectedEdges": true
+    "hoverConnectedEdges": false,
+    "selectConnectedEdges": false
   }},
   "nodes": {{
     "shape": "dot",
@@ -272,45 +273,36 @@ custom_injection = f"""
     .author-tag {{ color: #e74c3c; font-size: 10px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }}
     .collab-tag {{ color: #888888; font-size: 10px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }}
 
-    #map-details-modal {{
+    #map-info-panel {{
         display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(20, 20, 20, 0.95);
-        padding: 25px;
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: rgba(20, 20, 20, 0.9);
+        padding: 20px;
         border-radius: 8px;
         border: 1px solid #5a9bd4;
         color: white;
-        z-index: 2000;
-        box-shadow: 0px 4px 20px rgba(0,0,0,0.8);
-        min-width: 300px;
+        width: 300px;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
+        box-sizing: border-box;
     }}
-    #map-details-modal h3 {{ margin-top: 0; color: #5a9bd4; border-bottom: 1px solid #555; padding-bottom: 10px; }}
-    #map-details-modal p {{ font-size: 14px; line-height: 1.5; margin: 8px 0; }}
-    .close-modal-btn {{
+    #map-info-panel h3 {{ margin-top: 0; color: #5a9bd4; border-bottom: 1px solid #555; padding-bottom: 10px; font-size: 16px; }}
+    #map-info-panel p {{ font-size: 14px; line-height: 1.5; margin: 8px 0; }}
+    .close-panel-btn {{
         position: absolute;
-        top: 10px;
+        top: 15px;
         right: 15px;
         background: none;
         border: none;
         color: #aaa;
         font-size: 20px;
         cursor: pointer;
+        padding: 0;
+        line-height: 1;
     }}
-    .close-modal-btn:hover {{ color: white; }}
-
-    #modal-backdrop {{
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.4); /* Slight dimming effect */
-        z-index: 1500; /* Placed below the modal but above the UI and graph */
-    }}
+    .close-panel-btn:hover {{ color: white; }}
 </style>
 
 <div id="custom-ui-panel">
@@ -353,16 +345,13 @@ custom_injection = f"""
     </div>
 </div>
 
-<div id="map-details-modal">
-    <button class="close-modal-btn" onclick="closeMapModal()">×</button>
-    <h3 id="modal-map-name"></h3>
-    <p><strong>Year:</strong> <span id="modal-map-year"></span></p>
-    <p><strong>Primary Author(s):</strong> <span id="modal-map-primary"></span></p>
-    <p><strong>Collaborator(s):</strong> <span id="modal-map-collab"></span></p>
+<div id="map-info-panel">
+    <button class="close-panel-btn" onclick="closeMapInfo()">×</button>
+    <h3 id="panel-map-name"></h3>
+    <p><strong>Year:</strong> <span id="panel-map-year"></span></p>
+    <p><strong>Primary Author(s):</strong> <span id="panel-map-primary"></span></p>
+    <p><strong>Collaborator(s):</strong> <span id="panel-map-collab"></span></p>
 </div>
-
-<!-- Invisible/Dimmed overlay to catch outside clicks and prevent graph deselection -->
-<div id="modal-backdrop" onclick="closeMapModal()"></div>
 
 <script type="text/javascript">
     var defaultEdgeColor = "{base_edge_color}";
@@ -371,23 +360,110 @@ custom_injection = f"""
     var allMapsData = {all_maps_json};
     var currentSelectedNode = null;
 
+    function highlightNodeConnections(selectedNode) {{
+        var connectedNodes = network.getConnectedNodes(selectedNode);
+        var allNodes = nodes.get();
+        var allEdges = edges.get();
+        
+        for (var i = 0; i < allNodes.length; i++) {{
+            if (allNodes[i].id !== selectedNode && !connectedNodes.includes(allNodes[i].id)) {{
+                allNodes[i].color = "rgba(100, 100, 100, 0.08)";
+                allNodes[i].font = {{ color: "rgba(255, 255, 255, 0.08)", strokeColor: "rgba(0, 0, 0, 0.05)", strokeWidth: 8, background: "rgba(34, 34, 34, 0.0)" }};
+            }} else {{
+                allNodes[i].color = originalColors[allNodes[i].id]; 
+                allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+            }}
+        }}
+        
+        for (var j = 0; j < allEdges.length; j++) {{
+            if (allEdges[j].from === selectedNode || allEdges[j].to === selectedNode) {{
+                allEdges[j].color = {{ color: "rgba(255, 255, 255, 0.5)", highlight: "rgba(255, 255, 255, 0.6)" }};
+            }} else {{
+                allEdges[j].color = {{ color: "rgba(170, 170, 170, 0.05)" }}; 
+            }}
+        }}
+        
+        nodes.update(allNodes);
+        edges.update(allEdges);
+    }}
+
     function showMapDetails(mapName) {{
         var mapData = allMapsData[mapName];
         if (!mapData) return;
         
-        document.getElementById('modal-map-name').innerText = mapData.name;
-        document.getElementById('modal-map-year').innerText = mapData.year;
-        document.getElementById('modal-map-primary').innerText = mapData.primary_authors.length > 0 ? mapData.primary_authors.join(', ') : 'None';
-        document.getElementById('modal-map-collab').innerText = mapData.collaborators.length > 0 ? mapData.collaborators.join(', ') : 'None';
+        document.getElementById('panel-map-name').innerText = mapData.name;
+        document.getElementById('panel-map-year').innerText = mapData.year;
+        document.getElementById('panel-map-primary').innerText = mapData.primary_authors.length > 0 ? mapData.primary_authors.join(', ') : 'None';
+        document.getElementById('panel-map-collab').innerText = mapData.collaborators.length > 0 ? mapData.collaborators.join(', ') : 'None';
         
-        document.getElementById('map-details-modal').style.display = 'block';
-        document.getElementById('modal-backdrop').style.display = 'block';
+        document.getElementById('map-info-panel').style.display = 'block';
+
+        // Highlight map authors
+        var authorsToHighlight = mapData.primary_authors.concat(mapData.collaborators);
+        var allNodes = nodes.get();
+        var allEdges = edges.get();
+        
+        for (var i = 0; i < allNodes.length; i++) {{
+            if (!authorsToHighlight.includes(allNodes[i].id)) {{
+                allNodes[i].color = "rgba(100, 100, 100, 0.08)";
+                allNodes[i].font = {{ color: "rgba(255, 255, 255, 0.08)", strokeColor: "rgba(0, 0, 0, 0.05)", strokeWidth: 8, background: "rgba(34, 34, 34, 0.0)" }};
+            }} else {{
+                allNodes[i].color = originalColors[allNodes[i].id]; 
+                allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+            }}
+        }}
+        
+        for (var j = 0; j < allEdges.length; j++) {{
+            if (authorsToHighlight.includes(allEdges[j].from) && authorsToHighlight.includes(allEdges[j].to)) {{
+                allEdges[j].color = {{ color: "rgba(255, 255, 255, 0.5)", highlight: "rgba(255, 255, 255, 0.6)" }};
+            }} else {{
+                allEdges[j].color = {{ color: "rgba(170, 170, 170, 0.05)" }}; 
+            }}
+        }}
+        
+        nodes.update(allNodes);
+        edges.update(allEdges);
+
+        // Smoothly zoom out to scale 0.05 and center on the first highlighted author
+        var targetNode = authorsToHighlight.length > 0 ? authorsToHighlight[0] : null;
+        if (targetNode) {{
+            network.focus(targetNode, {{
+                scale: 0.05,
+                animation: {{ duration: 1000, easingFunction: 'easeInOutQuad' }}
+            }});
+        }} else {{
+            network.moveTo({{ scale: 0.05, animation: {{ duration: 1000, easingFunction: 'easeInOutQuad' }} }});
+        }}
     }}
 
-    function closeMapModal() {{
-        document.getElementById('map-details-modal').style.display = 'none';
-        document.getElementById('modal-backdrop').style.display = 'none';
+    function closeMapInfo() {{
+        document.getElementById('map-info-panel').style.display = 'none';
         document.getElementById('map-search').value = "";
+        
+        if (currentSelectedNode) {{
+            highlightNodeConnections(currentSelectedNode);
+            network.focus(currentSelectedNode, {{
+                scale: 0.05,
+                animation: {{ duration: 1000, easingFunction: 'easeInOutQuad' }}
+            }});
+        }} else {{
+            var allNodes = nodes.get();
+            var allEdges = edges.get();
+            
+            for (var i = 0; i < allNodes.length; i++) {{
+                allNodes[i].color = originalColors[allNodes[i].id];
+                allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+            }}
+            
+            for (var j = 0; j < allEdges.length; j++) {{
+                allEdges[j].color = defaultEdgeColor;
+            }}
+            
+            nodes.update(allNodes);
+            edges.update(allEdges);
+            
+            network.moveTo({{ scale: 0.04, animation: {{ duration: 1000, easingFunction: 'easeInOutQuad' }} }});
+        }}
     }}
 
     function renderMapList() {{
@@ -448,7 +524,7 @@ custom_injection = f"""
             var selectedId = this.value;
             if (selectedId) {{
                 network.focus(selectedId, {{
-                    scale: 0.2, 
+                    scale: 0.05, 
                     animation: {{ duration: 1000, easingFunction: 'easeInOutQuad' }}
                 }});
                 network.selectNodes([selectedId]);
@@ -456,7 +532,7 @@ custom_injection = f"""
             }} else {{
                 network.unselectAll();
                 network.emit('deselectNode', {{}});
-                network.fit({{ animation: {{ duration: 1000 }} }});
+                network.moveTo({{ scale: 0.04, animation: {{ duration: 1000, easingFunction: 'easeInOutQuad' }} }});
             }}
         }});
 
@@ -465,9 +541,10 @@ custom_injection = f"""
         mapNames.sort(function(a, b) {{ return a.toLowerCase().localeCompare(b.toLowerCase()); }});
         
         mapNames.forEach(function(name) {{
+            var mapData = allMapsData[name];
             var opt = document.createElement('option');
             opt.value = name;
-            opt.innerHTML = name;
+            opt.innerHTML = name + " (" + mapData.year + ")";
             mapSelect.appendChild(opt);
         }});
 
@@ -476,7 +553,7 @@ custom_injection = f"""
             if (selectedMap) {{
                 showMapDetails(selectedMap);
             }} else {{
-                closeMapModal();
+                closeMapInfo();
             }}
         }});
 
@@ -495,37 +572,26 @@ custom_injection = f"""
         }});
     }}, 1000);
 
+    network.once("stabilizationIterationsDone", function() {{
+        network.moveTo({{ scale: 0.04, animation: {{ duration: 1500, easingFunction: 'easeInOutQuad' }} }});
+    }});
+
+    network.on("click", function(params) {{
+        if (params.nodes.length === 0 && !currentSelectedNode) {{
+            closeMapInfo();
+        }}
+    }});
+
     network.on("selectNode", function(params) {{
-        closeMapModal();
+        // Manually close the map panel instead of executing closeMapInfo()
+        document.getElementById('map-info-panel').style.display = 'none';
+        document.getElementById('map-search').value = "";
 
         if (params.nodes.length === 1) {{
             var selectedNode = params.nodes[0];
             currentSelectedNode = selectedNode; 
             
-            var connectedNodes = network.getConnectedNodes(selectedNode);
-            var allNodes = nodes.get();
-            var allEdges = edges.get();
-            
-            for (var i = 0; i < allNodes.length; i++) {{
-                if (allNodes[i].id !== selectedNode && !connectedNodes.includes(allNodes[i].id)) {{
-                    allNodes[i].color = "rgba(100, 100, 100, 0.08)";
-                    allNodes[i].font = {{ color: "rgba(255, 255, 255, 0.08)", strokeColor: "rgba(0, 0, 0, 0.05)", strokeWidth: 8, background: "rgba(34, 34, 34, 0.0)" }};
-                }} else {{
-                    allNodes[i].color = originalColors[allNodes[i].id]; 
-                    allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
-                }}
-            }}
-            
-            for (var j = 0; j < allEdges.length; j++) {{
-                if (allEdges[j].from === selectedNode || allEdges[j].to === selectedNode) {{
-                    allEdges[j].color = {{ color: "rgba(255, 255, 255, 0.5)", highlight: "rgba(255, 255, 255, 0.6)" }};
-                }} else {{
-                    allEdges[j].color = {{ color: "rgba(170, 170, 170, 0.05)" }}; 
-                }}
-            }}
-            
-            nodes.update(allNodes);
-            edges.update(allEdges);
+            highlightNodeConnections(selectedNode);
 
             var detailsContainer = document.getElementById('author-details');
             var nameEl = document.getElementById('detail-name');
@@ -548,7 +614,8 @@ custom_injection = f"""
     }});
 
     network.on("deselectNode", function(params) {{
-        closeMapModal();
+        document.getElementById('map-info-panel').style.display = 'none';
+        document.getElementById('map-search').value = "";
 
         currentSelectedNode = null; 
         
