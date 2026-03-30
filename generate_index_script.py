@@ -232,14 +232,16 @@ custom_injection = f"""
         flex-direction: column;
         box-sizing: border-box;
     }}
-    #custom-ui-panel h3 {{ margin-top: 0; font-size: 16px; border-bottom: 1px solid #555; padding-bottom: 10px; }}
-    #custom-ui-panel h4 {{ font-size: 14px; margin: 15px 0 5px 0; }}
-    #author-search, #map-search {{ width: 100%; padding: 8px; margin-bottom: 10px; background: #333; color: white; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; }}
-    #reset-view-btn {{ width: 100%; padding: 10px; margin-bottom: 15px; cursor: pointer; background: #6c757d; color: white; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; box-sizing: border-box; }}
+    .input-group {{ display: flex; gap: 8px; margin-bottom: 10px; width: 100%; }}
+    #custom-ui-panel h3 {{ margin-top: 0; font-size: 15px; border-bottom: 1px solid #555; padding-bottom: 8px; margin-bottom: 10px; }}
+    #custom-ui-panel h4 {{ font-size: 13px; margin: 10px 0 5px 0; }}
+    #author-search, #map-search {{ width: 100%; padding: 6px; background: #333; color: white; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; font-size: 12px; }}
+    #reset-view-btn, #freeze-btn {{ width: 100%; padding: 6px; cursor: pointer; color: white; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; box-sizing: border-box; font-size: 12px; }}
+    #reset-view-btn {{ background: #6c757d; }}
     #reset-view-btn:hover {{ background: #5a6268; }}
-    #freeze-btn {{ width: 100%; padding: 10px; cursor: pointer; background: #5a9bd4; color: white; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; box-sizing: border-box; }}
+    #freeze-btn {{ background: #5a9bd4; }}
     #freeze-btn:hover {{ background: #4a8bc4; }}
-    .legend-list {{ list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.8; }}
+    .legend-list {{ list-style: none; padding: 0; margin: 0; font-size: 12px; line-height: 1.6; }}
     .legend-color {{ display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }}
     
     #author-details {{
@@ -261,19 +263,18 @@ custom_injection = f"""
     #detail-maps-container {{
         overflow-y: auto;
         padding-right: 5px;
-        flex-grow: 1;
-        max-height: 35vh; 
+        flex-grow: 1; 
     }}
     #detail-maps-container::-webkit-scrollbar {{ width: 6px; }}
     #detail-maps-container::-webkit-scrollbar-track {{ background: #222; border-radius: 3px; }}
     #detail-maps-container::-webkit-scrollbar-thumb {{ background: #555; border-radius: 3px; }}
     #detail-maps-container::-webkit-scrollbar-thumb:hover {{ background: #777; }}
     
-    .map-item {{ font-size: 13px; margin-bottom: 6px; color: #ddd; display: flex; align-items: flex-start; cursor: pointer; transition: background 0.2s; padding: 3px; border-radius: 3px; }}
+    .map-item {{ font-size: 11.5px; margin-bottom: 3px; color: #ddd; display: flex; align-items: flex-start; cursor: pointer; transition: background 0.2s; padding: 2px; border-radius: 3px; }}
     .map-item:hover {{ background: rgba(255, 255, 255, 0.1); }}
     
-    .author-tag {{ color: #e74c3c; font-size: 10px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }}
-    .collab-tag {{ color: #888888; font-size: 10px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }}
+    .author-tag {{ color: #e74c3c; font-size: 9.5px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }}
+    .collab-tag {{ color: #888888; font-size: 9.5px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }}
 
     #map-info-panel {{
         display: none;
@@ -310,14 +311,18 @@ custom_injection = f"""
 <div id="custom-ui-panel">
     <div>
         <h3>IS82 Modding Network</h3>
-        <select id="author-search">
-            <option value="">-- Search Author --</option>
-        </select>
-        <select id="map-search">
-            <option value="">-- Search Map --</option>
-        </select>
-        <button id="reset-view-btn">Reset View</button>
-        <button id="freeze-btn">Freeze Graph Physics</button>
+        <div class="input-group">
+            <select id="author-search">
+                <option value="">Author...</option>
+            </select>
+            <select id="map-search">
+                <option value="">Map...</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <button id="reset-view-btn">Reset View</button>
+            <button id="freeze-btn">Freeze Physics</button>
+        </div>
         
         <h4>Eras (First Map)</h4>
         <ul class="legend-list">
@@ -623,10 +628,10 @@ custom_injection = f"""
             network.setOptions({{ physics: {{ enabled: !isPhysicsEnabled }} }});
             
             if (isPhysicsEnabled) {{
-                this.innerText = "Unfreeze Graph Physics";
+                this.innerText = "Unfreeze Physics";
                 this.style.background = "#d45a5a";
             }} else {{
-                this.innerText = "Freeze Graph Physics";
+                this.innerText = "Freeze Physics";
                 this.style.background = "#5a9bd4";
             }}
         }});
