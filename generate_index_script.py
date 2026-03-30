@@ -99,8 +99,7 @@ var options = {{
       "size": 200,
       "face": "Arial",
       "strokeWidth": 8,
-      "strokeColor": "#222222",
-      "background": "rgba(34, 34, 34, 0.8)"
+      "strokeColor": "#222222"
     }}
   }},
   "edges": {{
@@ -374,7 +373,7 @@ custom_injection = f"""
                 allNodes[i].color = "rgba(100, 100, 100, 0.08)";
             }} else {{
                 allNodes[i].color = originalColors[allNodes[i].id]; 
-                allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+                allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 }};
             }}
         }}
         
@@ -409,7 +408,7 @@ custom_injection = f"""
         for (var i = 0; i < allNodes.length; i++) {{
             allNodes[i].color = originalColors[allNodes[i].id];
             allNodes[i].borderWidth = 1;
-            allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+            allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 }};
         }}
         for (var j = 0; j < allEdges.length; j++) {{
             allEdges[j].color = defaultEdgeColor;
@@ -437,11 +436,11 @@ custom_injection = f"""
                 if (isPrimary) {{
                     allNodes[i].color = {{ background: originalColors[allNodes[i].id], border: "#ffffff" }};
                     allNodes[i].borderWidth = 5;
-                    allNodes[i].font = {{ color: "#ffffff", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+                    allNodes[i].font = {{ color: "#ffffff", strokeColor: "#222222", strokeWidth: 8 }};
                 }} else {{
                     allNodes[i].color = {{ background: originalColors[allNodes[i].id], border: "#222222" }};
                     allNodes[i].borderWidth = 1;
-                    allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+                    allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 }};
                 }}
             }}
         }}
@@ -502,7 +501,7 @@ custom_injection = f"""
             for (var i = 0; i < allNodes.length; i++) {{
                 allNodes[i].color = originalColors[allNodes[i].id];
                 allNodes[i].borderWidth = 1;
-                allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+                allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 }};
             }}
             
             for (var j = 0; j < allEdges.length; j++) {{
@@ -685,7 +684,7 @@ custom_injection = f"""
         for (var i = 0; i < allNodes.length; i++) {{
             allNodes[i].color = originalColors[allNodes[i].id];
             allNodes[i].borderWidth = 1;
-            allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+            allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 }};
         }}
         
         for (var j = 0; j < allEdges.length; j++) {{

@@ -100,7 +100,7 @@
                   // adding nodes and edges to the graph
                   data = {nodes: nodes, edges: edges};
 
-                  var options = {"interaction": {"hover": true, "hoverConnectedEdges": false, "selectConnectedEdges": false}, "nodes": {"shape": "dot", "font": {"size": 200, "face": "Arial", "strokeWidth": 8, "strokeColor": "#222222", "background": "rgba(34,34,34,0.8)"}}, "edges": {"color": {"color": "rgba(170,170,170,0.3)", "highlight": "rgba(255,255,255,0.5)", "hover": "rgba(255,255,255,0.5)"}, "smooth": {"type": "continuous"}}, "physics": {"solver": "repulsion", "repulsion": {"nodeDistance": 3000, "centralGravity": 0.01, "springLength": 3000, "springConstant": 0.005, "damping": 0.09}, "minVelocity": 0.75}};
+                  var options = {"interaction": {"hover": true, "hoverConnectedEdges": false, "selectConnectedEdges": false}, "nodes": {"shape": "dot", "font": {"size": 200, "face": "Arial", "strokeWidth": 8, "strokeColor": "#222222"}}, "edges": {"color": {"color": "rgba(170,170,170,0.3)", "highlight": "rgba(255,255,255,0.5)", "hover": "rgba(255,255,255,0.5)"}, "smooth": {"type": "continuous"}}, "physics": {"solver": "repulsion", "repulsion": {"nodeDistance": 3000, "centralGravity": 0.01, "springLength": 3000, "springConstant": 0.005, "damping": 0.09}, "minVelocity": 0.75}};
 
                   
 
@@ -317,7 +317,7 @@
                 allNodes[i].color = "rgba(100, 100, 100, 0.08)";
             } else {
                 allNodes[i].color = originalColors[allNodes[i].id]; 
-                allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" };
+                allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 };
             }
         }
         
@@ -352,7 +352,7 @@
         for (var i = 0; i < allNodes.length; i++) {
             allNodes[i].color = originalColors[allNodes[i].id];
             allNodes[i].borderWidth = 1;
-            allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" };
+            allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 };
         }
         for (var j = 0; j < allEdges.length; j++) {
             allEdges[j].color = defaultEdgeColor;
@@ -380,11 +380,11 @@
                 if (isPrimary) {
                     allNodes[i].color = { background: originalColors[allNodes[i].id], border: "#ffffff" };
                     allNodes[i].borderWidth = 5;
-                    allNodes[i].font = { color: "#ffffff", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" };
+                    allNodes[i].font = { color: "#ffffff", strokeColor: "#222222", strokeWidth: 8 };
                 } else {
                     allNodes[i].color = { background: originalColors[allNodes[i].id], border: "#222222" };
                     allNodes[i].borderWidth = 1;
-                    allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" };
+                    allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 };
                 }
             }
         }
@@ -445,7 +445,7 @@
             for (var i = 0; i < allNodes.length; i++) {
                 allNodes[i].color = originalColors[allNodes[i].id];
                 allNodes[i].borderWidth = 1;
-                allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" };
+                allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 };
             }
             
             for (var j = 0; j < allEdges.length; j++) {
@@ -628,7 +628,7 @@
         for (var i = 0; i < allNodes.length; i++) {
             allNodes[i].color = originalColors[allNodes[i].id];
             allNodes[i].borderWidth = 1;
-            allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" };
+            allNodes[i].font = { color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8 };
         }
         
         for (var j = 0; j < allEdges.length; j++) {
