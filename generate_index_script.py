@@ -25,6 +25,7 @@ collaborations = []
 all_authors = []
 author_maps_data = {}
 author_years = {}
+all_maps_data = {}
 
 for idx, row in df.iterrows():
     map_name = str(row['Name']).strip()
@@ -34,6 +35,18 @@ for idx, row in df.iterrows():
     combined_authors = primary_authors + collaborator_authors
     all_authors.extend(combined_authors)
     
+    # Store global map data
+    if map_name not in all_maps_data:
+        all_maps_data[map_name] = {
+            'name': map_name,
+            'year': map_year,
+            'primary_authors': primary_authors,
+            'collaborators': collaborator_authors
+        }
+    else:
+        all_maps_data[map_name]['primary_authors'] = list(set(all_maps_data[map_name]['primary_authors'] + primary_authors))
+        all_maps_data[map_name]['collaborators'] = list(set(all_maps_data[map_name]['collaborators'] + collaborator_authors))
+        
     # Track complex map data (Name, Year, Role) for the frontend UI
     for i, author in enumerate(primary_authors):
         if author not in author_maps_data:
@@ -61,6 +74,7 @@ for idx, row in df.iterrows():
 
 # Convert the complex dictionary to JSON to inject it into JS later
 author_maps_json = json.dumps(author_maps_data)
+all_maps_json = json.dumps(all_maps_data)
 
 # 2. Calculate Metrics for the Graph
 author_counts = pd.Series(all_authors).value_counts()
@@ -219,7 +233,7 @@ custom_injection = f"""
     }}
     #custom-ui-panel h3 {{ margin-top: 0; font-size: 16px; border-bottom: 1px solid #555; padding-bottom: 10px; }}
     #custom-ui-panel h4 {{ font-size: 14px; margin: 15px 0 5px 0; }}
-    #author-search {{ width: 100%; padding: 8px; margin-bottom: 15px; background: #333; color: white; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; }}
+    #author-search, #map-search {{ width: 100%; padding: 8px; margin-bottom: 15px; background: #333; color: white; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; }}
     #freeze-btn {{ width: 100%; padding: 10px; cursor: pointer; background: #5a9bd4; color: white; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; box-sizing: border-box; }}
     #freeze-btn:hover {{ background: #4a8bc4; }}
     .legend-list {{ list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.8; }}
@@ -252,10 +266,51 @@ custom_injection = f"""
     #detail-maps-container::-webkit-scrollbar-thumb {{ background: #555; border-radius: 3px; }}
     #detail-maps-container::-webkit-scrollbar-thumb:hover {{ background: #777; }}
     
-    .map-item {{ font-size: 13px; margin-bottom: 6px; color: #ddd; display: flex; align-items: flex-start; }}
+    .map-item {{ font-size: 13px; margin-bottom: 6px; color: #ddd; display: flex; align-items: flex-start; cursor: pointer; transition: background 0.2s; padding: 3px; border-radius: 3px; }}
+    .map-item:hover {{ background: rgba(255, 255, 255, 0.1); }}
     
     .author-tag {{ color: #e74c3c; font-size: 10px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }}
     .collab-tag {{ color: #888888; font-size: 10px; font-weight: bold; margin-right: 5px; padding-top: 2px; flex-shrink: 0; }}
+
+    #map-details-modal {{
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(20, 20, 20, 0.95);
+        padding: 25px;
+        border-radius: 8px;
+        border: 1px solid #5a9bd4;
+        color: white;
+        z-index: 2000;
+        box-shadow: 0px 4px 20px rgba(0,0,0,0.8);
+        min-width: 300px;
+    }}
+    #map-details-modal h3 {{ margin-top: 0; color: #5a9bd4; border-bottom: 1px solid #555; padding-bottom: 10px; }}
+    #map-details-modal p {{ font-size: 14px; line-height: 1.5; margin: 8px 0; }}
+    .close-modal-btn {{
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: #aaa;
+        font-size: 20px;
+        cursor: pointer;
+    }}
+    .close-modal-btn:hover {{ color: white; }}
+
+    #modal-backdrop {{
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4); /* Slight dimming effect */
+        z-index: 1500; /* Placed below the modal but above the UI and graph */
+    }}
 </style>
 
 <div id="custom-ui-panel">
@@ -263,6 +318,9 @@ custom_injection = f"""
         <h3>IS82 Modding Network</h3>
         <select id="author-search">
             <option value="">-- Search Author --</option>
+        </select>
+        <select id="map-search">
+            <option value="">-- Search Map --</option>
         </select>
         <button id="freeze-btn">Freeze Graph Physics</button>
         
@@ -295,11 +353,42 @@ custom_injection = f"""
     </div>
 </div>
 
+<div id="map-details-modal">
+    <button class="close-modal-btn" onclick="closeMapModal()">×</button>
+    <h3 id="modal-map-name"></h3>
+    <p><strong>Year:</strong> <span id="modal-map-year"></span></p>
+    <p><strong>Primary Author(s):</strong> <span id="modal-map-primary"></span></p>
+    <p><strong>Collaborator(s):</strong> <span id="modal-map-collab"></span></p>
+</div>
+
+<!-- Invisible/Dimmed overlay to catch outside clicks and prevent graph deselection -->
+<div id="modal-backdrop" onclick="closeMapModal()"></div>
+
 <script type="text/javascript">
     var defaultEdgeColor = "{base_edge_color}";
     var originalColors = {{}};
     var authorMapsData = {author_maps_json};
+    var allMapsData = {all_maps_json};
     var currentSelectedNode = null;
+
+    function showMapDetails(mapName) {{
+        var mapData = allMapsData[mapName];
+        if (!mapData) return;
+        
+        document.getElementById('modal-map-name').innerText = mapData.name;
+        document.getElementById('modal-map-year').innerText = mapData.year;
+        document.getElementById('modal-map-primary').innerText = mapData.primary_authors.length > 0 ? mapData.primary_authors.join(', ') : 'None';
+        document.getElementById('modal-map-collab').innerText = mapData.collaborators.length > 0 ? mapData.collaborators.join(', ') : 'None';
+        
+        document.getElementById('map-details-modal').style.display = 'block';
+        document.getElementById('modal-backdrop').style.display = 'block';
+    }}
+
+    function closeMapModal() {{
+        document.getElementById('map-details-modal').style.display = 'none';
+        document.getElementById('modal-backdrop').style.display = 'none';
+        document.getElementById('map-search').value = "";
+    }}
 
     function renderMapList() {{
         if (!currentSelectedNode) return;
@@ -322,6 +411,7 @@ custom_injection = f"""
         maps.forEach(function(m) {{
             var li = document.createElement('li');
             li.className = 'map-item';
+            li.onclick = function() {{ showMapDetails(m.name); }};
             
             var prefix = "";
             if (m.role === 'Primary') {{
@@ -370,6 +460,26 @@ custom_injection = f"""
             }}
         }});
 
+        var mapSelect = document.getElementById('map-search');
+        var mapNames = Object.keys(allMapsData);
+        mapNames.sort(function(a, b) {{ return a.toLowerCase().localeCompare(b.toLowerCase()); }});
+        
+        mapNames.forEach(function(name) {{
+            var opt = document.createElement('option');
+            opt.value = name;
+            opt.innerHTML = name;
+            mapSelect.appendChild(opt);
+        }});
+
+        mapSelect.addEventListener('change', function() {{
+            var selectedMap = this.value;
+            if (selectedMap) {{
+                showMapDetails(selectedMap);
+            }} else {{
+                closeMapModal();
+            }}
+        }});
+
         var freezeBtn = document.getElementById('freeze-btn');
         freezeBtn.addEventListener('click', function() {{
             var isPhysicsEnabled = network.physics.options.enabled;
@@ -386,6 +496,8 @@ custom_injection = f"""
     }}, 1000);
 
     network.on("selectNode", function(params) {{
+        closeMapModal();
+
         if (params.nodes.length === 1) {{
             var selectedNode = params.nodes[0];
             currentSelectedNode = selectedNode; 
@@ -436,6 +548,8 @@ custom_injection = f"""
     }});
 
     network.on("deselectNode", function(params) {{
+        closeMapModal();
+
         currentSelectedNode = null; 
         
         var allNodes = nodes.get();
