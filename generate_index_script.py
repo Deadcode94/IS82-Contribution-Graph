@@ -2,6 +2,7 @@ import pandas as pd
 from pyvis.network import Network
 import itertools
 import json
+import re
 
 # 1. Load and Prepare the Data
 df = pd.read_csv('IS82 Maps - IS82 Maps.csv')
@@ -699,7 +700,15 @@ custom_injection = f"""
 </script>
 """
 
-with open(html_filename, 'a', encoding='utf-8') as f:
+with open(html_filename, 'r', encoding='utf-8') as f:
+    html_content = f.read()
+
+# Inject the <title> tag into the <head> of the generated HTML
+html_content = re.sub(r'<title>.*?</title>', '', html_content, flags=re.IGNORECASE)
+html_content = html_content.replace('</head>', '    <title>IS82 Contribution Graph</title>\n</head>')
+
+with open(html_filename, 'w', encoding='utf-8') as f:
+    f.write(html_content)
     f.write(custom_injection)
 
 print("Interactive graph generated successfully. UI explanatory subtitle for Goodday added.")

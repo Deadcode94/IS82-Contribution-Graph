@@ -15,8 +15,11 @@ This project generates a dynamic, interactive network graph that visualizes the 
 *   **Era-Based Coloring:** Authors are color-coded based on the year of their first map, categorizing them into "Veterans," "2nd Gen," and "New Era."
 *   **Detailed Side Panel:**
     *   **Author Search:** Quickly find and focus on any author in the graph.
+    *   **Map Search:** Find maps by name, automatically highlighting all associated primary authors and collaborators.
+    *   **Reset View:** A quick button to clear all selections and restore the graph to its default state.
     *   **Freeze Physics:** Lock the graph in place for easier inspection.
-    *   **Contribution List:** Click an author to see a detailed, sortable list of all their maps (as both primary author and collaborator).
+    *   **Contribution List:** Click an author to see a detailed list of all their maps (as both primary author and collaborator), which can be sorted alphabetically or by release year.
+*   **Map Info Panel:** A dedicated popup that displays specific details for a selected map, including its release year, primary authors, and collaborators.
 *   **Focus View:** When an author is selected, the graph automatically dims unconnected nodes to highlight their direct collaborators.
 *   **Custom Logic:** Includes special logic to handle specific cases, such as adjusting an author's "era" to exclude historical map revamps and provide context in the UI.
 
