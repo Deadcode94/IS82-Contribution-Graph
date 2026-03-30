@@ -234,7 +234,9 @@ custom_injection = f"""
     }}
     #custom-ui-panel h3 {{ margin-top: 0; font-size: 16px; border-bottom: 1px solid #555; padding-bottom: 10px; }}
     #custom-ui-panel h4 {{ font-size: 14px; margin: 15px 0 5px 0; }}
-    #author-search, #map-search {{ width: 100%; padding: 8px; margin-bottom: 15px; background: #333; color: white; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; }}
+    #author-search, #map-search {{ width: 100%; padding: 8px; margin-bottom: 10px; background: #333; color: white; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; }}
+    #reset-view-btn {{ width: 100%; padding: 10px; margin-bottom: 15px; cursor: pointer; background: #6c757d; color: white; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; box-sizing: border-box; }}
+    #reset-view-btn:hover {{ background: #5a6268; }}
     #freeze-btn {{ width: 100%; padding: 10px; cursor: pointer; background: #5a9bd4; color: white; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; box-sizing: border-box; }}
     #freeze-btn:hover {{ background: #4a8bc4; }}
     .legend-list {{ list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.8; }}
@@ -314,6 +316,7 @@ custom_injection = f"""
         <select id="map-search">
             <option value="">-- Search Map --</option>
         </select>
+        <button id="reset-view-btn">Reset View</button>
         <button id="freeze-btn">Freeze Graph Physics</button>
         
         <h4>Eras (First Map)</h4>
@@ -366,9 +369,9 @@ custom_injection = f"""
         var allEdges = edges.get();
         
         for (var i = 0; i < allNodes.length; i++) {{
+            allNodes[i].borderWidth = 1;
             if (allNodes[i].id !== selectedNode && !connectedNodes.includes(allNodes[i].id)) {{
                 allNodes[i].color = "rgba(100, 100, 100, 0.08)";
-                allNodes[i].font = {{ color: "rgba(255, 255, 255, 0.08)", strokeColor: "rgba(0, 0, 0, 0.05)", strokeWidth: 8, background: "rgba(34, 34, 34, 0.0)" }};
             }} else {{
                 allNodes[i].color = originalColors[allNodes[i].id]; 
                 allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
@@ -379,7 +382,7 @@ custom_injection = f"""
             if (allEdges[j].from === selectedNode || allEdges[j].to === selectedNode) {{
                 allEdges[j].color = {{ color: "rgba(255, 255, 255, 0.5)", highlight: "rgba(255, 255, 255, 0.6)" }};
             }} else {{
-                allEdges[j].color = {{ color: "rgba(170, 170, 170, 0.05)" }}; 
+                allEdges[j].color = {{ color: "rgba(170, 170, 170, 0.05)", highlight: "rgba(170, 170, 170, 0.05)" }}; 
             }}
         }}
         
@@ -387,7 +390,31 @@ custom_injection = f"""
         edges.update(allEdges);
     }}
 
-    function showMapDetails(mapName) {{
+    function showMapDetails(mapName, fromDropdown) {{
+        if (fromDropdown) {{
+            document.getElementById('author-search').value = "";
+            if (currentSelectedNode) {{
+                network.unselectAll();
+            }}
+            currentSelectedNode = null;
+            document.getElementById('author-details').style.display = "none";
+        }}
+
+        // Get all nodes and edges to prepare for a full visual reset.
+        var allNodes = nodes.get();
+        var allEdges = edges.get();
+
+        // First, reset all nodes and edges to their default appearance in the arrays.
+        // This clears any previous highlight state (e.g., from an author selection).
+        for (var i = 0; i < allNodes.length; i++) {{
+            allNodes[i].color = originalColors[allNodes[i].id];
+            allNodes[i].borderWidth = 1;
+            allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+        }}
+        for (var j = 0; j < allEdges.length; j++) {{
+            allEdges[j].color = defaultEdgeColor;
+        }}
+        
         var mapData = allMapsData[mapName];
         if (!mapData) return;
         
@@ -400,24 +427,46 @@ custom_injection = f"""
 
         // Highlight map authors
         var authorsToHighlight = mapData.primary_authors.concat(mapData.collaborators);
-        var allNodes = nodes.get();
-        var allEdges = edges.get();
         
         for (var i = 0; i < allNodes.length; i++) {{
             if (!authorsToHighlight.includes(allNodes[i].id)) {{
                 allNodes[i].color = "rgba(100, 100, 100, 0.08)";
-                allNodes[i].font = {{ color: "rgba(255, 255, 255, 0.08)", strokeColor: "rgba(0, 0, 0, 0.05)", strokeWidth: 8, background: "rgba(34, 34, 34, 0.0)" }};
+                allNodes[i].borderWidth = 1;
             }} else {{
-                allNodes[i].color = originalColors[allNodes[i].id]; 
-                allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+                var isPrimary = mapData.primary_authors.includes(allNodes[i].id);
+                if (isPrimary) {{
+                    allNodes[i].color = {{ background: originalColors[allNodes[i].id], border: "#ffffff" }};
+                    allNodes[i].borderWidth = 5;
+                    allNodes[i].font = {{ color: "#ffffff", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+                }} else {{
+                    allNodes[i].color = {{ background: originalColors[allNodes[i].id], border: "#222222" }};
+                    allNodes[i].borderWidth = 1;
+                    allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
+                }}
             }}
         }}
         
         for (var j = 0; j < allEdges.length; j++) {{
-            if (authorsToHighlight.includes(allEdges[j].from) && authorsToHighlight.includes(allEdges[j].to)) {{
+            var isAnyFrom = authorsToHighlight.includes(allEdges[j].from);
+            var isAnyTo = authorsToHighlight.includes(allEdges[j].to);
+            var shouldHighlight = false;
+            
+            if (mapData.primary_authors.length > 0) {{
+                var isPrimaryFrom = mapData.primary_authors.includes(allEdges[j].from);
+                var isPrimaryTo = mapData.primary_authors.includes(allEdges[j].to);
+                if ((isPrimaryFrom && isAnyTo) || (isPrimaryTo && isAnyFrom)) {{
+                    shouldHighlight = true;
+                }}
+            }} else {{
+                if (isAnyFrom && isAnyTo) {{
+                    shouldHighlight = true;
+                }}
+            }}
+            
+            if (shouldHighlight) {{
                 allEdges[j].color = {{ color: "rgba(255, 255, 255, 0.5)", highlight: "rgba(255, 255, 255, 0.6)" }};
             }} else {{
-                allEdges[j].color = {{ color: "rgba(170, 170, 170, 0.05)" }}; 
+                allEdges[j].color = {{ color: "rgba(170, 170, 170, 0.05)", highlight: "rgba(170, 170, 170, 0.05)" }}; 
             }}
         }}
         
@@ -452,6 +501,7 @@ custom_injection = f"""
             
             for (var i = 0; i < allNodes.length; i++) {{
                 allNodes[i].color = originalColors[allNodes[i].id];
+                allNodes[i].borderWidth = 1;
                 allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
             }}
             
@@ -487,7 +537,7 @@ custom_injection = f"""
         maps.forEach(function(m) {{
             var li = document.createElement('li');
             li.className = 'map-item';
-            li.onclick = function() {{ showMapDetails(m.name); }};
+            li.onclick = function() {{ showMapDetails(m.name, false); }};
             
             var prefix = "";
             if (m.role === 'Primary') {{
@@ -527,7 +577,8 @@ custom_injection = f"""
                     scale: 0.05, 
                     animation: {{ duration: 1000, easingFunction: 'easeInOutQuad' }}
                 }});
-                network.selectNodes([selectedId]);
+                // Pass false as the second parameter to explicitly prevent the engine from force-selecting edges
+                network.selectNodes([selectedId], false);
                 network.emit('selectNode', {{ nodes: [selectedId] }});
             }} else {{
                 network.unselectAll();
@@ -551,10 +602,19 @@ custom_injection = f"""
         mapSelect.addEventListener('change', function() {{
             var selectedMap = this.value;
             if (selectedMap) {{
-                showMapDetails(selectedMap);
+                showMapDetails(selectedMap, true);
             }} else {{
                 closeMapInfo();
             }}
+        }});
+
+        var resetBtn = document.getElementById('reset-view-btn');
+        resetBtn.addEventListener('click', function() {{
+            currentSelectedNode = null; 
+            network.unselectAll(); 
+            closeMapInfo(); 
+            document.getElementById('author-details').style.display = "none"; 
+            document.getElementById('author-search').value = ""; 
         }});
 
         var freezeBtn = document.getElementById('freeze-btn');
@@ -624,6 +684,7 @@ custom_injection = f"""
         
         for (var i = 0; i < allNodes.length; i++) {{
             allNodes[i].color = originalColors[allNodes[i].id];
+            allNodes[i].borderWidth = 1;
             allNodes[i].font = {{ color: "rgba(255, 255, 255, 1)", strokeColor: "#222222", strokeWidth: 8, background: "rgba(34, 34, 34, 0.8)" }};
         }}
         
